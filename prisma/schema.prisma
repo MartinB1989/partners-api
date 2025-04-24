@@ -13,3 +13,22 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  roles     Role[]   // Array de roles
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relaciones que se añadirán después
+  // products Product[]
+}
+
+enum Role {
+  ADMIN
+  CUSTOM
+  PRODUCTOR
+}
