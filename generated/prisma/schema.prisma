@@ -23,8 +23,42 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Relaciones que se añadirán después
-  // products Product[]
+  // Relación con productos
+  products Product[]
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  price       Float
+  stock       Int      @default(1)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relación con el usuario (creador/vendedor)
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  // Relación con imágenes
+  images ProductImage[]
+}
+
+model ProductImage {
+  id        String   @id @default(uuid())
+  url       String
+  main      Boolean  @default(false)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relación con el producto
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  // Esto asegura que solo puede haber una imagen principal por producto
+  @@unique([productId, main], name: "uniqueMainImage")
 }
 
 enum Role {
