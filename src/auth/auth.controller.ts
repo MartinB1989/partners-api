@@ -6,6 +6,8 @@ import { RegisterDto } from './dto/register.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { User } from '../../generated/prisma';
+import { AdminLoginDto } from './dto/admin-login.dto';
+import { AdminProducerGuard } from './guards/admin-producer.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -19,6 +21,12 @@ export class AuthController {
   @Post('login')
   login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
+  }
+
+  @UseGuards(AdminProducerGuard)
+  @Post('admin/login')
+  adminLogin(@Body() adminLoginDto: AdminLoginDto) {
+    return this.authService.adminLogin(adminLoginDto);
   }
 
   @UseGuards(JwtAuthGuard)

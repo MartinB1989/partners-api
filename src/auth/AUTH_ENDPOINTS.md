@@ -26,6 +26,19 @@ curl -X POST {BASE_URL}/auth/login \
   }'
 ```
 
+## Inicio de Sesión para Administradores y Productores
+
+```bash
+curl -X POST {BASE_URL}/auth/admin/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "admin@ejemplo.com",
+    "password": "admin123"
+  }'
+```
+
+Este endpoint solo permite el inicio de sesión de usuarios con roles ADMIN o PRODUCTOR. Los usuarios con rol CUSTOM no podrán acceder.
+
 ## Obtener Perfil del Usuario Actual
 
 ```bash
@@ -59,5 +72,4 @@ curl -X POST {BASE_URL}/auth/register \
     "password": "prod123",
     "roles": ["PRODUCTOR"]
   }'
-```
 ```
