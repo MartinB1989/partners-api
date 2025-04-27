@@ -1,5 +1,13 @@
 // src/users/dto/create-user.dto.ts
-import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsString,
+  MinLength,
+  IsArray,
+  IsEnum,
+  IsOptional,
+} from 'class-validator';
 import { Role } from '../../../generated/prisma';
 
 export class CreateUserDto {
@@ -16,5 +24,8 @@ export class CreateUserDto {
   @MinLength(6)
   password: string;
 
+  @IsOptional()
+  @IsArray()
+  @IsEnum(Role, { each: true })
   roles?: Role[];
 }
