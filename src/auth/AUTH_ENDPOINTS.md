@@ -5,7 +5,7 @@ Este documento contiene los comandos CURL para probar los endpoints de autentica
 ## Registro de Usuario
 
 ```bash
-curl -X POST http://localhost:3000/auth/register \
+curl -X POST {BASE_URL}/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Usuario Prueba",
@@ -18,7 +18,7 @@ curl -X POST http://localhost:3000/auth/register \
 ## Inicio de Sesión
 
 ```bash
-curl -X POST http://localhost:3000/auth/login \
+curl -X POST {BASE_URL}/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "usuario@ejemplo.com",
@@ -29,7 +29,7 @@ curl -X POST http://localhost:3000/auth/login \
 ## Obtener Perfil del Usuario Actual
 
 ```bash
-curl -X GET http://localhost:3000/auth/profile \
+curl -X GET {BASE_URL}/auth/profile \
   -H "Authorization: Bearer TU_TOKEN_JWT"
 ```
 
@@ -38,7 +38,7 @@ curl -X GET http://localhost:3000/auth/profile \
 ### Crear un usuario administrador
 
 ```bash
-curl -X POST http://localhost:3000/auth/register \
+curl -X POST {BASE_URL}/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Admin Usuario",
@@ -51,7 +51,7 @@ curl -X POST http://localhost:3000/auth/register \
 ### Crear un usuario productor
 
 ```bash
-curl -X POST http://localhost:3000/auth/register \
+curl -X POST {BASE_URL}/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Productor Ejemplo",
