@@ -34,7 +34,7 @@ lerna-debug.log*
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
-
+settings.json
 # dotenv environment variable files
 .env
 .env.development.local
@@ -45,6 +45,8 @@ lerna-debug.log*
 # temp directory
 .temp
 .tmp
+
+promp-base.txt
 
 # Runtime data
 pids
