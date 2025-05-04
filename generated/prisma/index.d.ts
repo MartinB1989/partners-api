@@ -3423,6 +3423,7 @@ export namespace Prisma {
   export type ProductImageMinAggregateOutputType = {
     id: string | null
     url: string | null
+    key: string | null
     main: boolean | null
     order: number | null
     createdAt: Date | null
@@ -3433,6 +3434,7 @@ export namespace Prisma {
   export type ProductImageMaxAggregateOutputType = {
     id: string | null
     url: string | null
+    key: string | null
     main: boolean | null
     order: number | null
     createdAt: Date | null
@@ -3443,6 +3445,7 @@ export namespace Prisma {
   export type ProductImageCountAggregateOutputType = {
     id: number
     url: number
+    key: number
     main: number
     order: number
     createdAt: number
@@ -3463,6 +3466,7 @@ export namespace Prisma {
   export type ProductImageMinAggregateInputType = {
     id?: true
     url?: true
+    key?: true
     main?: true
     order?: true
     createdAt?: true
@@ -3473,6 +3477,7 @@ export namespace Prisma {
   export type ProductImageMaxAggregateInputType = {
     id?: true
     url?: true
+    key?: true
     main?: true
     order?: true
     createdAt?: true
@@ -3483,6 +3488,7 @@ export namespace Prisma {
   export type ProductImageCountAggregateInputType = {
     id?: true
     url?: true
+    key?: true
     main?: true
     order?: true
     createdAt?: true
@@ -3580,6 +3586,7 @@ export namespace Prisma {
   export type ProductImageGroupByOutputType = {
     id: string
     url: string
+    key: string
     main: boolean
     order: number
     createdAt: Date
@@ -3609,6 +3616,7 @@ export namespace Prisma {
   export type ProductImageSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     url?: boolean
+    key?: boolean
     main?: boolean
     order?: boolean
     createdAt?: boolean
@@ -3620,6 +3628,7 @@ export namespace Prisma {
   export type ProductImageSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     url?: boolean
+    key?: boolean
     main?: boolean
     order?: boolean
     createdAt?: boolean
@@ -3631,6 +3640,7 @@ export namespace Prisma {
   export type ProductImageSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     url?: boolean
+    key?: boolean
     main?: boolean
     order?: boolean
     createdAt?: boolean
@@ -3642,6 +3652,7 @@ export namespace Prisma {
   export type ProductImageSelectScalar = {
     id?: boolean
     url?: boolean
+    key?: boolean
     main?: boolean
     order?: boolean
     createdAt?: boolean
@@ -3649,7 +3660,7 @@ export namespace Prisma {
     productId?: boolean
   }
 
-  export type ProductImageOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "url" | "main" | "order" | "createdAt" | "updatedAt" | "productId", ExtArgs["result"]["productImage"]>
+  export type ProductImageOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "url" | "key" | "main" | "order" | "createdAt" | "updatedAt" | "productId", ExtArgs["result"]["productImage"]>
   export type ProductImageInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     product?: boolean | ProductDefaultArgs<ExtArgs>
   }
@@ -3668,6 +3679,7 @@ export namespace Prisma {
     scalars: $Extensions.GetPayloadResult<{
       id: string
       url: string
+      key: string
       main: boolean
       order: number
       createdAt: Date
@@ -4099,6 +4111,7 @@ export namespace Prisma {
   interface ProductImageFieldRefs {
     readonly id: FieldRef<"ProductImage", 'String'>
     readonly url: FieldRef<"ProductImage", 'String'>
+    readonly key: FieldRef<"ProductImage", 'String'>
     readonly main: FieldRef<"ProductImage", 'Boolean'>
     readonly order: FieldRef<"ProductImage", 'Int'>
     readonly createdAt: FieldRef<"ProductImage", 'DateTime'>
@@ -4563,6 +4576,7 @@ export namespace Prisma {
   export const ProductImageScalarFieldEnum: {
     id: 'id',
     url: 'url',
+    key: 'key',
     main: 'main',
     order: 'order',
     createdAt: 'createdAt',
@@ -4825,6 +4839,7 @@ export namespace Prisma {
     NOT?: ProductImageWhereInput | ProductImageWhereInput[]
     id?: StringFilter<"ProductImage"> | string
     url?: StringFilter<"ProductImage"> | string
+    key?: StringFilter<"ProductImage"> | string
     main?: BoolFilter<"ProductImage"> | boolean
     order?: IntFilter<"ProductImage"> | number
     createdAt?: DateTimeFilter<"ProductImage"> | Date | string
@@ -4836,6 +4851,7 @@ export namespace Prisma {
   export type ProductImageOrderByWithRelationInput = {
     id?: SortOrder
     url?: SortOrder
+    key?: SortOrder
     main?: SortOrder
     order?: SortOrder
     createdAt?: SortOrder
@@ -4851,6 +4867,7 @@ export namespace Prisma {
     OR?: ProductImageWhereInput[]
     NOT?: ProductImageWhereInput | ProductImageWhereInput[]
     url?: StringFilter<"ProductImage"> | string
+    key?: StringFilter<"ProductImage"> | string
     main?: BoolFilter<"ProductImage"> | boolean
     order?: IntFilter<"ProductImage"> | number
     createdAt?: DateTimeFilter<"ProductImage"> | Date | string
@@ -4862,6 +4879,7 @@ export namespace Prisma {
   export type ProductImageOrderByWithAggregationInput = {
     id?: SortOrder
     url?: SortOrder
+    key?: SortOrder
     main?: SortOrder
     order?: SortOrder
     createdAt?: SortOrder
@@ -4880,6 +4898,7 @@ export namespace Prisma {
     NOT?: ProductImageScalarWhereWithAggregatesInput | ProductImageScalarWhereWithAggregatesInput[]
     id?: StringWithAggregatesFilter<"ProductImage"> | string
     url?: StringWithAggregatesFilter<"ProductImage"> | string
+    key?: StringWithAggregatesFilter<"ProductImage"> | string
     main?: BoolWithAggregatesFilter<"ProductImage"> | boolean
     order?: IntWithAggregatesFilter<"ProductImage"> | number
     createdAt?: DateTimeWithAggregatesFilter<"ProductImage"> | Date | string
@@ -5051,6 +5070,7 @@ export namespace Prisma {
   export type ProductImageCreateInput = {
     id?: string
     url: string
+    key: string
     main?: boolean
     order?: number
     createdAt?: Date | string
@@ -5061,6 +5081,7 @@ export namespace Prisma {
   export type ProductImageUncheckedCreateInput = {
     id?: string
     url: string
+    key: string
     main?: boolean
     order?: number
     createdAt?: Date | string
@@ -5071,6 +5092,7 @@ export namespace Prisma {
   export type ProductImageUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     url?: StringFieldUpdateOperationsInput | string
+    key?: StringFieldUpdateOperationsInput | string
     main?: BoolFieldUpdateOperationsInput | boolean
     order?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -5081,6 +5103,7 @@ export namespace Prisma {
   export type ProductImageUncheckedUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     url?: StringFieldUpdateOperationsInput | string
+    key?: StringFieldUpdateOperationsInput | string
     main?: BoolFieldUpdateOperationsInput | boolean
     order?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -5091,6 +5114,7 @@ export namespace Prisma {
   export type ProductImageCreateManyInput = {
     id?: string
     url: string
+    key: string
     main?: boolean
     order?: number
     createdAt?: Date | string
@@ -5101,6 +5125,7 @@ export namespace Prisma {
   export type ProductImageUpdateManyMutationInput = {
     id?: StringFieldUpdateOperationsInput | string
     url?: StringFieldUpdateOperationsInput | string
+    key?: StringFieldUpdateOperationsInput | string
     main?: BoolFieldUpdateOperationsInput | boolean
     order?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -5110,6 +5135,7 @@ export namespace Prisma {
   export type ProductImageUncheckedUpdateManyInput = {
     id?: StringFieldUpdateOperationsInput | string
     url?: StringFieldUpdateOperationsInput | string
+    key?: StringFieldUpdateOperationsInput | string
     main?: BoolFieldUpdateOperationsInput | boolean
     order?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -5362,6 +5388,7 @@ export namespace Prisma {
   export type ProductImageCountOrderByAggregateInput = {
     id?: SortOrder
     url?: SortOrder
+    key?: SortOrder
     main?: SortOrder
     order?: SortOrder
     createdAt?: SortOrder
@@ -5376,6 +5403,7 @@ export namespace Prisma {
   export type ProductImageMaxOrderByAggregateInput = {
     id?: SortOrder
     url?: SortOrder
+    key?: SortOrder
     main?: SortOrder
     order?: SortOrder
     createdAt?: SortOrder
@@ -5386,6 +5414,7 @@ export namespace Prisma {
   export type ProductImageMinOrderByAggregateInput = {
     id?: SortOrder
     url?: SortOrder
+    key?: SortOrder
     main?: SortOrder
     order?: SortOrder
     createdAt?: SortOrder
@@ -5762,6 +5791,7 @@ export namespace Prisma {
   export type ProductImageCreateWithoutProductInput = {
     id?: string
     url: string
+    key: string
     main?: boolean
     order?: number
     createdAt?: Date | string
@@ -5771,6 +5801,7 @@ export namespace Prisma {
   export type ProductImageUncheckedCreateWithoutProductInput = {
     id?: string
     url: string
+    key: string
     main?: boolean
     order?: number
     createdAt?: Date | string
@@ -5840,6 +5871,7 @@ export namespace Prisma {
     NOT?: ProductImageScalarWhereInput | ProductImageScalarWhereInput[]
     id?: StringFilter<"ProductImage"> | string
     url?: StringFilter<"ProductImage"> | string
+    key?: StringFilter<"ProductImage"> | string
     main?: BoolFilter<"ProductImage"> | boolean
     order?: IntFilter<"ProductImage"> | number
     createdAt?: DateTimeFilter<"ProductImage"> | Date | string
@@ -5960,6 +5992,7 @@ export namespace Prisma {
   export type ProductImageCreateManyProductInput = {
     id?: string
     url: string
+    key: string
     main?: boolean
     order?: number
     createdAt?: Date | string
@@ -5969,6 +6002,7 @@ export namespace Prisma {
   export type ProductImageUpdateWithoutProductInput = {
     id?: StringFieldUpdateOperationsInput | string
     url?: StringFieldUpdateOperationsInput | string
+    key?: StringFieldUpdateOperationsInput | string
     main?: BoolFieldUpdateOperationsInput | boolean
     order?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -5978,6 +6012,7 @@ export namespace Prisma {
   export type ProductImageUncheckedUpdateWithoutProductInput = {
     id?: StringFieldUpdateOperationsInput | string
     url?: StringFieldUpdateOperationsInput | string
+    key?: StringFieldUpdateOperationsInput | string
     main?: BoolFieldUpdateOperationsInput | boolean
     order?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -5987,6 +6022,7 @@ export namespace Prisma {
   export type ProductImageUncheckedUpdateManyWithoutProductInput = {
     id?: StringFieldUpdateOperationsInput | string
     url?: StringFieldUpdateOperationsInput | string
+    key?: StringFieldUpdateOperationsInput | string
     main?: BoolFieldUpdateOperationsInput | boolean
     order?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string

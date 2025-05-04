@@ -58,6 +58,18 @@ curl -X DELETE \
 
 ## Imágenes de Productos
 
+### Obtener URL prefirmada para subir imagen a S3
+```bash
+curl -X POST \
+  "${BASE_URL}/products/images/presigned-url" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer TU_TOKEN" \
+  -d '{
+    "contentType": "image/jpeg",
+    "fileExtension": "jpg"
+  }'
+```
+
 ### Añadir imagen a un producto
 ```bash
 curl -X POST \
@@ -65,10 +77,18 @@ curl -X POST \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer TU_TOKEN" \
   -d '{
-    "url": "https://ejemplo.com/imagen.jpg",
+    "url": "https://nombre-bucket.s3.region.amazonaws.com/images/id-imagen.jpg",
+    "key": "images/id-imagen.jpg",
     "main": false,
     "order": 0
   }'
+```
+
+### Obtener URL prefirmada para eliminar imagen de S3
+```bash
+curl -X GET \
+  "${BASE_URL}/products/ID_DEL_PRODUCTO/images/ID_DE_LA_IMAGEN/delete-url" \
+  -H "Authorization: Bearer TU_TOKEN"
 ```
 
 ### Eliminar imagen de un producto

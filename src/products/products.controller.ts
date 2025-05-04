@@ -14,6 +14,7 @@ import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { CreateProductImageDto } from './dto/create-product-image.dto';
+import { GeneratePresignedUrlDto } from './dto/generate-presigned-url.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { User } from '../../generated/prisma';
 import { Request } from 'express';
@@ -79,6 +80,18 @@ export class ProductsController {
   }
 
   // Endpoints para manejar imágenes
+
+  /**
+   * Genera una URL prefirmada para subir una imagen a S3
+   */
+  @UseGuards(JwtAuthGuard)
+  @Post('images/presigned-url')
+  generatePresignedUrl(
+    @Body() generatePresignedUrlDto: GeneratePresignedUrlDto,
+  ) {
+    return this.productsService.generatePresignedUrl(generatePresignedUrlDto);
+  }
+
   @UseGuards(JwtAuthGuard)
   @Post(':id/images')
   addImage(
@@ -101,6 +114,23 @@ export class ProductsController {
     @Req() req: RequestWithUser,
   ) {
     return this.productsService.removeProductImage(
+      productId,
+      imageId,
+      req.user.id,
+    );
+  }
+
+  /**
+   * Genera una URL prefirmada para eliminar una imagen de S3
+   */
+  @UseGuards(JwtAuthGuard)
+  @Get(':productId/images/:imageId/delete-url')
+  generateDeletePresignedUrl(
+    @Param('productId') productId: string,
+    @Param('imageId') imageId: string,
+    @Req() req: RequestWithUser,
+  ) {
+    return this.productsService.generateDeletePresignedUrl(
       productId,
       imageId,
       req.user.id,

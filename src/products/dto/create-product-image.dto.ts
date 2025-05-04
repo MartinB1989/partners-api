@@ -11,6 +11,10 @@ export class CreateProductImageDto {
   @IsString()
   url: string;
 
+  @IsNotEmpty()
+  @IsString()
+  key: string;
+
   @IsBoolean()
   main: boolean = false;
 
