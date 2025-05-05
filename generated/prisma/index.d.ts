@@ -4862,7 +4862,6 @@ export namespace Prisma {
 
   export type ProductImageWhereUniqueInput = Prisma.AtLeast<{
     id?: string
-    uniqueMainImage?: ProductImageUniqueMainImageCompoundUniqueInput
     AND?: ProductImageWhereInput | ProductImageWhereInput[]
     OR?: ProductImageWhereInput[]
     NOT?: ProductImageWhereInput | ProductImageWhereInput[]
@@ -4874,7 +4873,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFilter<"ProductImage"> | Date | string
     productId?: StringFilter<"ProductImage"> | string
     product?: XOR<ProductScalarRelationFilter, ProductWhereInput>
-  }, "id" | "uniqueMainImage">
+  }, "id">
 
   export type ProductImageOrderByWithAggregationInput = {
     id?: SortOrder
@@ -5378,11 +5377,6 @@ export namespace Prisma {
   export type ProductScalarRelationFilter = {
     is?: ProductWhereInput
     isNot?: ProductWhereInput
-  }
-
-  export type ProductImageUniqueMainImageCompoundUniqueInput = {
-    productId: string
-    main: boolean
   }
 
   export type ProductImageCountOrderByAggregateInput = {

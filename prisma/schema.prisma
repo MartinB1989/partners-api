@@ -57,9 +57,6 @@ model ProductImage {
   // Relación con el producto
   productId String
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  // Esto asegura que solo puede haber una imagen principal por producto
-  @@unique([productId, main], name: "uniqueMainImage")
 }
 
 enum Role {

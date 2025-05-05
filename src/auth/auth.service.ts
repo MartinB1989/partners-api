@@ -66,6 +66,8 @@ export class AuthService {
     );
 
     if (!isPasswordValid) {
+      console.log(user);
+      console.log(isPasswordValid);
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
