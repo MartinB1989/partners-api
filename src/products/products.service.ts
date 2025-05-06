@@ -9,6 +9,7 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { CreateProductImageDto } from './dto/create-product-image.dto';
 import { GeneratePresignedUrlDto } from './dto/generate-presigned-url.dto';
 import { AwsService } from '../aws/aws.service';
+import { DeleteObjectCommand } from '@aws-sdk/client-s3';
 
 @Injectable()
 export class ProductsService {
@@ -196,7 +197,9 @@ export class ProductsService {
     // Verificar si el producto existe y pertenece al usuario
     const product = await this.prisma.product.findUnique({
       where: { id },
-      select: { userId: true },
+      include: {
+        images: true,
+      },
     });
 
     if (!product) {
@@ -209,6 +212,32 @@ export class ProductsService {
       );
     }
 
+    // Eliminar las imágenes del producto de S3 y la base de datos
+    if (product.images.length > 0) {
+      // Eliminar las imágenes de la base de datos
+      await this.prisma.productImage.deleteMany({
+        where: { productId: id },
+      });
+
+      // Eliminar las imágenes de S3
+      for (const image of product.images) {
+        // Preparar el comando DeleteObject para S3
+        const command = new DeleteObjectCommand({
+          Bucket: this.awsService['bucket'],
+          Key: image.key,
+        });
+
+        // Ejecutar el comando para eliminar la imagen de S3
+        try {
+          await this.awsService['s3Client'].send(command);
+        } catch (error) {
+          console.error(`Error al eliminar imagen ${image.key} de S3:`, error);
+          // Continuamos con la eliminación aunque haya errores con S3
+        }
+      }
+    }
+
+    // Finalmente eliminar el producto
     return this.prisma.product.delete({
       where: { id },
     });
