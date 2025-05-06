@@ -142,7 +142,7 @@ export class ProductsService {
     };
   }
 
-  async findOne(id: string) {
+  async findOne(id: number) {
     const product = await this.prisma.product.findUnique({
       where: { id },
       include: {
@@ -167,7 +167,7 @@ export class ProductsService {
     return product;
   }
 
-  async update(id: string, updateProductDto: UpdateProductDto, userId: string) {
+  async update(id: number, updateProductDto: UpdateProductDto, userId: string) {
     // Verificar si el producto existe y pertenece al usuario
     const product = await this.prisma.product.findUnique({
       where: { id },
@@ -193,7 +193,7 @@ export class ProductsService {
     });
   }
 
-  async remove(id: string, userId: string) {
+  async remove(id: number, userId: string) {
     // Verificar si el producto existe y pertenece al usuario
     const product = await this.prisma.product.findUnique({
       where: { id },
@@ -253,7 +253,7 @@ export class ProductsService {
 
   // Métodos para manejar imágenes
   async addProductImage(
-    productId: string,
+    productId: number,
     imageDto: CreateProductImageDto,
     userId: string,
   ) {
@@ -269,132 +269,146 @@ export class ProductsService {
 
     if (product.userId !== userId) {
       throw new BadRequestException(
-        'No tienes permiso para modificar este producto',
+        'No tienes permiso para añadir imágenes a este producto',
       );
     }
 
-    // Implementar transacción
-    if (imageDto.main) {
-      return this.prisma.$transaction([
-        // Desmarcar imágenes principales existentes
-        this.prisma.productImage.updateMany({
-          where: { productId, main: true },
-          data: { main: false },
-        }),
-
-        // Crear la nueva imagen como principal
-        this.prisma.productImage.create({
-          data: {
-            ...imageDto,
-            product: { connect: { id: productId } },
-          },
-        }),
-      ]);
-    } else {
-      // Si no es principal, solo crear la imagen
-      return this.prisma.productImage.create({
-        data: {
-          ...imageDto,
-          product: { connect: { id: productId } },
-        },
-      });
-    }
-  }
-
-  async removeProductImage(productId: string, imageId: string, userId: string) {
-    // Verificar si el producto existe y pertenece al usuario
-    const product = await this.prisma.product.findUnique({
-      where: { id: productId },
-      select: { userId: true },
-    });
-
-    if (!product) {
-      throw new NotFoundException(`Producto con ID ${productId} no encontrado`);
-    }
-
-    if (product.userId !== userId) {
-      throw new BadRequestException(
-        'No tienes permiso para modificar este producto',
-      );
-    }
-
-    return this.prisma.$transaction(async (tx) => {
-      // Obtener si la imagen es principal
-      const image = await tx.productImage.findUnique({
-        where: { id: imageId },
-      });
-
-      if (!image) {
-        throw new NotFoundException(`Imagen con ID ${imageId} no encontrada`);
-      }
-
-      // Eliminar la imagen
-      await tx.productImage.delete({ where: { id: imageId } });
-
-      // Si era la imagen principal, establecer otra imagen como principal
-      if (image.main) {
-        const nextImage = await tx.productImage.findFirst({
-          where: { productId },
-          orderBy: { order: 'asc' },
-        });
-
-        if (nextImage) {
-          await tx.productImage.update({
-            where: { id: nextImage.id },
-            data: { main: true },
-          });
-        }
-      }
-
-      return { success: true };
-    });
-  }
-
-  async setMainImage(productId: string, imageId: string, userId: string) {
-    // Verificar si el producto existe y pertenece al usuario
-    const product = await this.prisma.product.findUnique({
-      where: { id: productId },
-      select: { userId: true },
-    });
-
-    if (!product) {
-      throw new NotFoundException(`Producto con ID ${productId} no encontrado`);
-    }
-
-    if (product.userId !== userId) {
-      throw new BadRequestException(
-        'No tienes permiso para modificar este producto',
-      );
-    }
-
-    // Verificar si la imagen existe y pertenece al producto
-    const image = await this.prisma.productImage.findFirst({
+    // Verificar si ya existe una imagen marcada como principal
+    const existingMainImage = await this.prisma.productImage.findFirst({
       where: {
-        id: imageId,
         productId,
+        main: true,
       },
     });
 
-    if (!image) {
-      throw new NotFoundException(
-        `Imagen con ID ${imageId} no encontrada para este producto`,
+    // Si no hay imagen principal, marcar esta como principal
+    const isMain = !existingMainImage;
+
+    // Crear la imagen
+    const image = await this.prisma.productImage.create({
+      data: {
+        ...imageDto,
+        main: isMain,
+        product: {
+          connect: { id: productId },
+        },
+      },
+    });
+
+    return image;
+  }
+
+  async removeProductImage(productId: number, imageId: string, userId: string) {
+    // Verificar si el producto existe y pertenece al usuario
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+      select: { userId: true },
+    });
+
+    if (!product) {
+      throw new NotFoundException(`Producto con ID ${productId} no encontrado`);
+    }
+
+    if (product.userId !== userId) {
+      throw new BadRequestException(
+        'No tienes permiso para eliminar imágenes de este producto',
       );
     }
 
-    // Implementar transacción aquí
-    return this.prisma.$transaction([
-      // Desmarcar todas las imágenes principales
-      this.prisma.productImage.updateMany({
-        where: { productId, main: true },
-        data: { main: false },
-      }),
+    // Verificar si la imagen existe
+    const image = await this.prisma.productImage.findUnique({
+      where: { id: imageId },
+    });
 
-      // Marcar la nueva imagen como principal
-      this.prisma.productImage.update({
-        where: { id: imageId },
-        data: { main: true },
-      }),
-    ]);
+    if (!image) {
+      throw new NotFoundException(`Imagen con ID ${imageId} no encontrada`);
+    }
+
+    // Verificar si la imagen pertenece al producto
+    if (image.productId !== productId) {
+      throw new BadRequestException(
+        'La imagen no pertenece al producto especificado',
+      );
+    }
+
+    // Eliminar la imagen de la base de datos
+    await this.prisma.productImage.delete({ where: { id: imageId } });
+
+    // Si la imagen era principal, asignar otra imagen como principal
+    if (image.main) {
+      const nextImage = await this.prisma.productImage.findFirst({
+        where: { productId },
+        orderBy: { order: 'asc' },
+      });
+
+      if (nextImage) {
+        await this.prisma.productImage.update({
+          where: { id: nextImage.id },
+          data: { main: true },
+        });
+      }
+    }
+
+    // Intentar eliminar la imagen de S3
+    try {
+      const command = new DeleteObjectCommand({
+        Bucket: this.awsService['bucket'],
+        Key: image.key,
+      });
+      await this.awsService['s3Client'].send(command);
+    } catch (error) {
+      console.error(`Error al eliminar imagen ${image.key} de S3:`, error);
+    }
+
+    return { success: true, message: 'Imagen eliminada correctamente' };
+  }
+
+  async setMainImage(productId: number, imageId: string, userId: string) {
+    // Verificar si el producto existe y pertenece al usuario
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+      select: { userId: true },
+    });
+
+    if (!product) {
+      throw new NotFoundException(`Producto con ID ${productId} no encontrado`);
+    }
+
+    if (product.userId !== userId) {
+      throw new BadRequestException(
+        'No tienes permiso para modificar imágenes de este producto',
+      );
+    }
+
+    // Verificar si la imagen existe
+    const image = await this.prisma.productImage.findUnique({
+      where: { id: imageId },
+    });
+
+    if (!image) {
+      throw new NotFoundException(`Imagen con ID ${imageId} no encontrada`);
+    }
+
+    // Verificar si la imagen pertenece al producto
+    if (image.productId !== productId) {
+      throw new BadRequestException(
+        'La imagen no pertenece al producto especificado',
+      );
+    }
+
+    // Actualizar todas las imágenes del producto para quitar la marca de principal
+    await this.prisma.productImage.updateMany({
+      where: { productId },
+      data: { main: false },
+    });
+
+    // Marcar la imagen seleccionada como principal
+    await this.prisma.productImage.update({
+      where: { id: imageId },
+      data: { main: true },
+    });
+
+    return { success: true, message: 'Imagen principal actualizada' };
   }
 
   /**
@@ -405,7 +419,7 @@ export class ProductsService {
    * @returns URL prefirmada para eliminar la imagen
    */
   async generateDeletePresignedUrl(
-    productId: string,
+    productId: number,
     imageId: string,
     userId: string,
   ) {
@@ -421,7 +435,7 @@ export class ProductsService {
 
     if (product.userId !== userId) {
       throw new BadRequestException(
-        'No tienes permiso para modificar este producto',
+        'No tienes permiso para acceder a este producto',
       );
     }
 
@@ -434,13 +448,16 @@ export class ProductsService {
       throw new NotFoundException(`Imagen con ID ${imageId} no encontrada`);
     }
 
-    // Cuando tengas la migración con el campo 'key', puedes descomentar esta línea:
-    return this.awsService.getPresignedUrlForDelete(image.key);
+    // Verificar si la imagen pertenece al producto
+    if (image.productId !== productId) {
+      throw new BadRequestException(
+        'La imagen no pertenece al producto especificado',
+      );
+    }
 
-    // Por ahora devolvemos un objeto vacío
-    // return {
-    //   success: true,
-    //   message: 'URL generada correctamente (simulación)',
-    // };
+    // Generar URL prefirmada para eliminar
+    const deleteUrl = await this.awsService.getPresignedUrlForDelete(image.key);
+
+    return { deleteUrl, key: image.key };
   }
 }

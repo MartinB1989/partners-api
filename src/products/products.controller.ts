@@ -60,7 +60,7 @@ export class ProductsController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.productsService.findOne(id);
+    return this.productsService.findOne(+id);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -70,13 +70,13 @@ export class ProductsController {
     @Body() updateProductDto: UpdateProductDto,
     @Req() req: RequestWithUser,
   ) {
-    return this.productsService.update(id, updateProductDto, req.user.id);
+    return this.productsService.update(+id, updateProductDto, req.user.id);
   }
 
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
   remove(@Param('id') id: string, @Req() req: RequestWithUser) {
-    return this.productsService.remove(id, req.user.id);
+    return this.productsService.remove(+id, req.user.id);
   }
 
   // Endpoints para manejar imágenes
@@ -100,7 +100,7 @@ export class ProductsController {
     @Req() req: RequestWithUser,
   ) {
     return this.productsService.addProductImage(
-      id,
+      +id,
       createImageDto,
       req.user.id,
     );
@@ -114,7 +114,7 @@ export class ProductsController {
     @Req() req: RequestWithUser,
   ) {
     return this.productsService.removeProductImage(
-      productId,
+      +productId,
       imageId,
       req.user.id,
     );
@@ -131,7 +131,7 @@ export class ProductsController {
     @Req() req: RequestWithUser,
   ) {
     return this.productsService.generateDeletePresignedUrl(
-      productId,
+      +productId,
       imageId,
       req.user.id,
     );
@@ -144,6 +144,6 @@ export class ProductsController {
     @Param('imageId') imageId: string,
     @Req() req: RequestWithUser,
   ) {
-    return this.productsService.setMainImage(productId, imageId, req.user.id);
+    return this.productsService.setMainImage(+productId, imageId, req.user.id);
   }
 }

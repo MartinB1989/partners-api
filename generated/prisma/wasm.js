@@ -128,7 +128,6 @@ exports.Prisma.UserScalarFieldEnum = {
 };
 
 exports.Prisma.ProductScalarFieldEnum = {
-  id: 'id',
   title: 'title',
   description: 'description',
   price: 'price',
@@ -136,17 +135,18 @@ exports.Prisma.ProductScalarFieldEnum = {
   active: 'active',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
-  userId: 'userId'
+  userId: 'userId',
+  id: 'id'
 };
 
 exports.Prisma.ProductImageScalarFieldEnum = {
   id: 'id',
   url: 'url',
-  key: 'key',
   main: 'main',
   order: 'order',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
+  key: 'key',
   productId: 'productId'
 };
 
