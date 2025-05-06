@@ -68,12 +68,51 @@ export class ProductsService {
   }
 
   async findAllByUser(userId: string, page = 1, limit = 10) {
+    // Si limit es 0, traer todos los productos sin paginación
+    if (limit === 0) {
+      const [products, total] = await Promise.all([
+        this.prisma.product.findMany({
+          where: {
+            userId,
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+          include: {
+            images: {
+              orderBy: {
+                order: 'asc',
+              },
+            },
+          },
+        }),
+        this.prisma.product.count({
+          where: {
+            userId,
+          },
+        }),
+      ]);
+
+      return {
+        data: products,
+        meta: {
+          total,
+          page: 1,
+          lastPage: 1,
+        },
+      };
+    }
+
+    // Comportamiento normal con paginación
     const skip = (page - 1) * limit;
 
     const [products, total] = await Promise.all([
       this.prisma.product.findMany({
         where: {
           userId,
+        },
+        orderBy: {
+          createdAt: 'desc',
         },
         skip,
         take: limit,
@@ -354,12 +393,12 @@ export class ProductsService {
     }
 
     // Cuando tengas la migración con el campo 'key', puedes descomentar esta línea:
-    // return this.awsService.getPresignedUrlForDelete(image.key);
+    return this.awsService.getPresignedUrlForDelete(image.key);
 
     // Por ahora devolvemos un objeto vacío
-    return {
-      success: true,
-      message: 'URL generada correctamente (simulación)',
-    };
+    // return {
+    //   success: true,
+    //   message: 'URL generada correctamente (simulación)',
+    // };
   }
 }
