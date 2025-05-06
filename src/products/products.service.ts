@@ -212,34 +212,33 @@ export class ProductsService {
       );
     }
 
-    // Eliminar las imágenes del producto de S3 y la base de datos
-    if (product.images.length > 0) {
+    // Implementar transacción para eliminar el producto y sus imágenes
+    return this.prisma.$transaction(async (tx) => {
       // Eliminar las imágenes de la base de datos
-      await this.prisma.productImage.deleteMany({
-        where: { productId: id },
-      });
+      await tx.productImage.deleteMany({ where: { productId: id } });
 
-      // Eliminar las imágenes de S3
-      for (const image of product.images) {
-        // Preparar el comando DeleteObject para S3
-        const command = new DeleteObjectCommand({
-          Bucket: this.awsService['bucket'],
-          Key: image.key,
-        });
+      // Eliminar el producto
+      const deletedProduct = await tx.product.delete({ where: { id } });
 
-        // Ejecutar el comando para eliminar la imagen de S3
-        try {
-          await this.awsService['s3Client'].send(command);
-        } catch (error) {
-          console.error(`Error al eliminar imagen ${image.key} de S3:`, error);
-          // Continuamos con la eliminación aunque haya errores con S3
+      // Luego de la transacción, intentar eliminar de S3 (esto es externo a la DB)
+      if (product.images.length > 0) {
+        for (const image of product.images) {
+          try {
+            const command = new DeleteObjectCommand({
+              Bucket: this.awsService['bucket'],
+              Key: image.key,
+            });
+            await this.awsService['s3Client'].send(command);
+          } catch (error) {
+            console.error(
+              `Error al eliminar imagen ${image.key} de S3:`,
+              error,
+            );
+          }
         }
       }
-    }
 
-    // Finalmente eliminar el producto
-    return this.prisma.product.delete({
-      where: { id },
+      return deletedProduct;
     });
   }
 
@@ -274,28 +273,32 @@ export class ProductsService {
       );
     }
 
-    // Si la imagen es principal, desmarcamos las otras imágenes principales
+    // Implementar transacción
     if (imageDto.main) {
-      await this.prisma.productImage.updateMany({
-        where: {
-          productId,
-          main: true,
-        },
+      return this.prisma.$transaction([
+        // Desmarcar imágenes principales existentes
+        this.prisma.productImage.updateMany({
+          where: { productId, main: true },
+          data: { main: false },
+        }),
+
+        // Crear la nueva imagen como principal
+        this.prisma.productImage.create({
+          data: {
+            ...imageDto,
+            product: { connect: { id: productId } },
+          },
+        }),
+      ]);
+    } else {
+      // Si no es principal, solo crear la imagen
+      return this.prisma.productImage.create({
         data: {
-          main: false,
+          ...imageDto,
+          product: { connect: { id: productId } },
         },
       });
     }
-
-    // Guardar la imagen en la base de datos con la información de S3
-    return this.prisma.productImage.create({
-      data: {
-        ...imageDto,
-        product: {
-          connect: { id: productId },
-        },
-      },
-    });
   }
 
   async removeProductImage(productId: string, imageId: string, userId: string) {
@@ -315,22 +318,36 @@ export class ProductsService {
       );
     }
 
-    // Verificar si la imagen existe
-    const image = await this.prisma.productImage.findUnique({
-      where: { id: imageId },
+    return this.prisma.$transaction(async (tx) => {
+      // Obtener si la imagen es principal
+      const image = await tx.productImage.findUnique({
+        where: { id: imageId },
+      });
+
+      if (!image) {
+        throw new NotFoundException(`Imagen con ID ${imageId} no encontrada`);
+      }
+
+      // Eliminar la imagen
+      await tx.productImage.delete({ where: { id: imageId } });
+
+      // Si era la imagen principal, establecer otra imagen como principal
+      if (image.main) {
+        const nextImage = await tx.productImage.findFirst({
+          where: { productId },
+          orderBy: { order: 'asc' },
+        });
+
+        if (nextImage) {
+          await tx.productImage.update({
+            where: { id: nextImage.id },
+            data: { main: true },
+          });
+        }
+      }
+
+      return { success: true };
     });
-
-    if (!image) {
-      throw new NotFoundException(`Imagen con ID ${imageId} no encontrada`);
-    }
-
-    // Eliminar la imagen de la base de datos
-    await this.prisma.productImage.delete({
-      where: { id: imageId },
-    });
-
-    // Indicamos que la operación fue exitosa
-    return { success: true };
   }
 
   async setMainImage(productId: string, imageId: string, userId: string) {
@@ -364,24 +381,20 @@ export class ProductsService {
       );
     }
 
-    // Actualizar todas las imágenes del producto para quitar el main
-    await this.prisma.productImage.updateMany({
-      where: {
-        productId,
-        main: true,
-      },
-      data: {
-        main: false,
-      },
-    });
+    // Implementar transacción aquí
+    return this.prisma.$transaction([
+      // Desmarcar todas las imágenes principales
+      this.prisma.productImage.updateMany({
+        where: { productId, main: true },
+        data: { main: false },
+      }),
 
-    // Establecer esta imagen como la principal
-    return this.prisma.productImage.update({
-      where: { id: imageId },
-      data: {
-        main: true,
-      },
-    });
+      // Marcar la nueva imagen como principal
+      this.prisma.productImage.update({
+        where: { id: imageId },
+        data: { main: true },
+      }),
+    ]);
   }
 
   /**
