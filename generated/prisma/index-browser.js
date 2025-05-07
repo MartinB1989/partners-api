@@ -128,6 +128,7 @@ exports.Prisma.UserScalarFieldEnum = {
 };
 
 exports.Prisma.ProductScalarFieldEnum = {
+  id: 'id',
   title: 'title',
   description: 'description',
   price: 'price',
@@ -135,8 +136,7 @@ exports.Prisma.ProductScalarFieldEnum = {
   active: 'active',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
-  userId: 'userId',
-  id: 'id'
+  userId: 'userId'
 };
 
 exports.Prisma.ProductImageScalarFieldEnum = {
@@ -148,6 +148,17 @@ exports.Prisma.ProductImageScalarFieldEnum = {
   updatedAt: 'updatedAt',
   key: 'key',
   productId: 'productId'
+};
+
+exports.Prisma.CategoryScalarFieldEnum = {
+  id: 'id',
+  name: 'name'
+};
+
+exports.Prisma.ProductCategoryScalarFieldEnum = {
+  id: 'id',
+  productId: 'productId',
+  categoryId: 'categoryId'
 };
 
 exports.Prisma.SortOrder = {
@@ -168,7 +179,9 @@ exports.Role = exports.$Enums.Role = {
 exports.Prisma.ModelName = {
   User: 'User',
   Product: 'Product',
-  ProductImage: 'ProductImage'
+  ProductImage: 'ProductImage',
+  Category: 'Category',
+  ProductCategory: 'ProductCategory'
 };
 
 /**

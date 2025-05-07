@@ -20,17 +20,18 @@ model User {
 }
 
 model Product {
-  title       String
-  description String
-  price       Float
-  stock       Int            @default(1)
-  active      Boolean        @default(true)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  userId      String
-  id          Int            @id @default(autoincrement())
-  user        User           @relation(fields: [userId], references: [id])
-  images      ProductImage[]
+  id                Int               @id @default(autoincrement())
+  title             String
+  description       String
+  price             Float
+  stock             Int               @default(1)
+  active            Boolean           @default(true)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  userId            String
+  user              User              @relation(fields: [userId], references: [id])
+  images            ProductImage[]
+  productCategories ProductCategory[]
 }
 
 model ProductImage {
@@ -43,6 +44,22 @@ model ProductImage {
   key       String
   productId Int
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Category {
+  id                Int               @id @default(autoincrement())
+  name              String
+  productCategories ProductCategory[]
+}
+
+model ProductCategory {
+  id         Int      @id @default(autoincrement())
+  productId  Int
+  categoryId Int
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, categoryId])
 }
 
 enum Role {

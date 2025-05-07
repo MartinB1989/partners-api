@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 import { ProductsModule } from './products/products.module';
 import { AwsModule } from './aws/aws.module';
+import { CategoriesModule } from './categories/categories.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { AwsModule } from './aws/aws.module';
     AuthModule,
     ProductsModule,
     AwsModule,
+    CategoriesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
