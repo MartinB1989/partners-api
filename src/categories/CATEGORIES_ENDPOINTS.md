@@ -48,3 +48,59 @@ curl -X DELETE \
 ``` 
 
 > **Nota:** No se pueden eliminar categorías que tengan subcategorías. 
+
+## Filtrar Categorías
+
+### GET /categories/filter
+
+Filtra las categorías según diferentes criterios.
+
+#### Query Parameters
+
+| Parámetro | Tipo   | Requerido | Descripción                                    |
+|-----------|--------|-----------|------------------------------------------------|
+| level     | number | No        | Nivel de la categoría (1-3)                    |
+| name      | string | No        | Nombre de la categoría (búsqueda parcial)      |
+| idName    | string | No        | idName de la categoría (búsqueda parcial)      |
+
+#### Ejemplos de Uso
+
+```http
+GET /categories/filter?level=1
+GET /categories/filter?name=ropa
+GET /categories/filter?idName=ropa-deportiva
+GET /categories/filter?level=2&name=zapatillas
+```
+
+#### Respuesta
+
+```json
+[
+  {
+    "id": 1,
+    "name": "Ropa",
+    "idName": "ropa",
+    "level": 1,
+    "parentId": null,
+    "parent": null,
+    "children": [
+      {
+        "id": 2,
+        "name": "Ropa Deportiva",
+        "idName": "ropa-deportiva",
+        "level": 2,
+        "parentId": 1,
+        "parent": null,
+        "children": []
+      }
+    ]
+  }
+]
+```
+
+#### Notas
+
+- La búsqueda por `name` e `idName` es insensible a mayúsculas/minúsculas
+- Los filtros son opcionales y pueden combinarse
+- Los resultados se ordenan por nivel y nombre
+- Incluye las relaciones `parent` y `children`

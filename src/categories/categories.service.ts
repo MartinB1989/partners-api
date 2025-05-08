@@ -6,7 +6,8 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
-import { Category } from '../../generated/prisma';
+import { Category, Prisma } from '../../generated/prisma';
+import { FilterCategoryDto } from './dto/filter-category.dto';
 
 interface UpdateCategoryData extends Partial<UpdateCategoryDto> {
   idName?: string;
@@ -59,6 +60,37 @@ export class CategoriesService {
 
   async findAll(): Promise<Category[]> {
     return this.prisma.category.findMany({
+      include: {
+        parent: true,
+        children: true,
+      },
+      orderBy: [{ level: 'asc' }, { name: 'asc' }],
+    });
+  }
+
+  async findByFilters(filters: FilterCategoryDto): Promise<Category[]> {
+    const where: Prisma.CategoryWhereInput = {};
+
+    if (filters.level) {
+      where.level = filters.level;
+    }
+
+    if (filters.name) {
+      where.name = {
+        contains: filters.name,
+        mode: 'insensitive',
+      };
+    }
+
+    if (filters.idName) {
+      where.idName = {
+        contains: filters.idName,
+        mode: 'insensitive',
+      };
+    }
+
+    return this.prisma.category.findMany({
+      where,
       include: {
         parent: true,
         children: true,
@@ -147,7 +179,6 @@ export class CategoriesService {
       throw new NotFoundException(`Categoría con ID ${id} no encontrada`);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if (category?.children?.length > 0) {
       throw new BadRequestException(
         'No se puede eliminar una categoría que tiene subcategorías',
