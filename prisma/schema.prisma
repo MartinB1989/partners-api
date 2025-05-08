@@ -49,7 +49,15 @@ model ProductImage {
 model Category {
   id                Int              @id @default(autoincrement())
   name              String
+  idName            String          @unique
+  level             Int              @default(1) // 1: nivel superior, 2: nivel medio, 3: nivel inferior
+  parentId          Int?             // Referencia al ID de la categoría padre
+  parent            Category?        @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children          Category[]       @relation("CategoryHierarchy")
   productCategories ProductCategory[]
+
+  @@index([parentId])
+  @@index([level])
 }
 
 model ProductCategory {

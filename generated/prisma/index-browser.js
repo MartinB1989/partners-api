@@ -152,7 +152,10 @@ exports.Prisma.ProductImageScalarFieldEnum = {
 
 exports.Prisma.CategoryScalarFieldEnum = {
   id: 'id',
-  name: 'name'
+  name: 'name',
+  idName: 'idName',
+  level: 'level',
+  parentId: 'parentId'
 };
 
 exports.Prisma.ProductCategoryScalarFieldEnum = {
@@ -169,6 +172,11 @@ exports.Prisma.SortOrder = {
 exports.Prisma.QueryMode = {
   default: 'default',
   insensitive: 'insensitive'
+};
+
+exports.Prisma.NullsOrder = {
+  first: 'first',
+  last: 'last'
 };
 exports.Role = exports.$Enums.Role = {
   ADMIN: 'ADMIN',
