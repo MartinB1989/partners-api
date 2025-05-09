@@ -215,7 +215,15 @@ export class ProductsService {
         },
         productCategories: {
           include: {
-            category: true,
+            category: {
+              include: {
+                parent: {
+                  include: {
+                    parent: true, // Incluye categoría abuelo (nivel 3)
+                  },
+                },
+              },
+            },
           },
         },
       },
