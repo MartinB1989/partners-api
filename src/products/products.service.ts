@@ -19,19 +19,60 @@ export class ProductsService {
   ) {}
 
   async create(createProductDto: CreateProductDto, userId: string) {
-    const product = await this.prisma.product.create({
-      data: {
-        ...createProductDto,
-        user: {
-          connect: { id: userId },
-        },
-      },
-      include: {
-        images: true,
-      },
-    });
+    const { categoryIds, ...productData } = createProductDto;
 
-    return product;
+    // Verificar que las categorías existan
+    if (categoryIds && categoryIds.length > 0) {
+      const categories = await this.prisma.category.findMany({
+        where: {
+          id: {
+            in: categoryIds,
+          },
+        },
+      });
+
+      if (categories.length !== categoryIds.length) {
+        throw new BadRequestException('Una o más categorías no existen');
+      }
+    }
+
+    // Crear el producto con sus categorías en una transacción
+    return this.prisma.$transaction(async (tx) => {
+      // Crear el producto
+      const product = await tx.product.create({
+        data: {
+          ...productData,
+          user: {
+            connect: { id: userId },
+          },
+        },
+      });
+
+      // Crear las relaciones con las categorías
+      if (categoryIds && categoryIds.length > 0) {
+        await tx.productCategory.createMany({
+          data: categoryIds.map((categoryId) => ({
+            productId: product.id,
+            categoryId,
+          })),
+        });
+      }
+
+      // Obtener el producto con las imágenes y categorías
+      const productWithRelations = await tx.product.findUnique({
+        where: { id: product.id },
+        include: {
+          images: true,
+          productCategories: {
+            include: {
+              category: true,
+            },
+          },
+        },
+      });
+
+      return productWithRelations;
+    });
   }
 
   async findAll(page = 1, limit = 10) {
@@ -51,6 +92,11 @@ export class ProductsService {
             select: {
               id: true,
               name: true,
+            },
+          },
+          productCategories: {
+            include: {
+              category: true,
             },
           },
         },
@@ -83,6 +129,11 @@ export class ProductsService {
             images: {
               orderBy: {
                 order: 'asc',
+              },
+            },
+            productCategories: {
+              include: {
+                category: true,
               },
             },
           },
@@ -123,6 +174,11 @@ export class ProductsService {
               order: 'asc',
             },
           },
+          productCategories: {
+            include: {
+              category: true,
+            },
+          },
         },
       }),
       this.prisma.product.count({
@@ -157,6 +213,11 @@ export class ProductsService {
             name: true,
           },
         },
+        productCategories: {
+          include: {
+            category: true,
+          },
+        },
       },
     });
 
@@ -184,12 +245,61 @@ export class ProductsService {
       );
     }
 
-    return this.prisma.product.update({
-      where: { id },
-      data: updateProductDto,
-      include: {
-        images: true,
-      },
+    const { categoryIds, ...productData } = updateProductDto;
+
+    // Verificar que las categorías existan si se proporcionan
+    if (categoryIds && categoryIds.length > 0) {
+      const categories = await this.prisma.category.findMany({
+        where: {
+          id: {
+            in: categoryIds,
+          },
+        },
+      });
+
+      if (categories.length !== categoryIds.length) {
+        throw new BadRequestException('Una o más categorías no existen');
+      }
+    }
+
+    // Actualizar el producto y sus categorías en una transacción
+    return this.prisma.$transaction(async (tx) => {
+      // Actualizar el producto
+      await tx.product.update({
+        where: { id },
+        data: productData,
+      });
+
+      // Si hay categoryIds, actualizar las relaciones
+      if (categoryIds && categoryIds.length > 0) {
+        // Eliminar relaciones existentes
+        await tx.productCategory.deleteMany({
+          where: { productId: id },
+        });
+
+        // Crear nuevas relaciones
+        await tx.productCategory.createMany({
+          data: categoryIds.map((categoryId) => ({
+            productId: id,
+            categoryId,
+          })),
+        });
+      }
+
+      // Obtener el producto actualizado con sus relaciones
+      const productWithRelations = await tx.product.findUnique({
+        where: { id },
+        include: {
+          images: true,
+          productCategories: {
+            include: {
+              category: true,
+            },
+          },
+        },
+      });
+
+      return productWithRelations;
     });
   }
 
@@ -214,6 +324,9 @@ export class ProductsService {
 
     // Implementar transacción para eliminar el producto y sus imágenes
     return this.prisma.$transaction(async (tx) => {
+      // Eliminar las relaciones con categorías
+      await tx.productCategory.deleteMany({ where: { productId: id } });
+
       // Eliminar las imágenes de la base de datos
       await tx.productImage.deleteMany({ where: { productId: id } });
 

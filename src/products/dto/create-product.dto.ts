@@ -4,6 +4,9 @@ import {
   IsString,
   IsBoolean,
   Min,
+  IsArray,
+  ArrayMinSize,
+  ArrayMaxSize,
 } from 'class-validator';
 
 export class CreateProductDto {
@@ -27,4 +30,12 @@ export class CreateProductDto {
 
   @IsBoolean()
   active: boolean = true;
+
+  @IsArray()
+  @ArrayMinSize(1, { message: 'El producto debe tener al menos una categoría' })
+  @ArrayMaxSize(5, {
+    message: 'El producto no puede tener más de 5 categorías',
+  })
+  @IsNumber({}, { each: true })
+  categoryIds: number[];
 }

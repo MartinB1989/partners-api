@@ -15,7 +15,8 @@ curl -X POST \
     "description": "Descripción detallada",
     "price": 99.99,
     "stock": 10,
-    "active": true
+    "active": true,
+    "categoryIds": [1, 4, 5]
   }'
 ```
 
@@ -45,7 +46,8 @@ curl -X PATCH \
   -d '{
     "title": "Nuevo nombre",
     "price": 129.99,
-    "active": false
+    "active": false,
+    "categoryIds": [2, 3]
   }'
 ```
 
