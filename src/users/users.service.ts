@@ -9,10 +9,15 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
 import { Role, User } from '../../generated/prisma';
+import { SesService } from '../aws/ses/ses.service';
+import { welcomeTemplate } from '../common/templates/email/welcome.template';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private readonly sesService: SesService,
+  ) {}
 
   async create(createUserDto: CreateUserDto): Promise<Omit<User, 'password'>> {
     // Verificar si el correo ya existe
@@ -36,6 +41,18 @@ export class UsersService {
         roles: createUserDto.roles || [Role.CUSTOM],
       },
     });
+
+    // Enviar email de bienvenida
+    try {
+      const emailTemplate = welcomeTemplate(createUserDto.name);
+      await this.sesService.sendEmail({
+        to: createUserDto.email,
+        ...emailTemplate,
+      });
+    } catch (error) {
+      // Log del error pero no interrumpimos el flujo de registro
+      console.error('Error al enviar email de bienvenida:', error);
+    }
 
     // Eliminar la contraseña antes de devolver el usuario
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
