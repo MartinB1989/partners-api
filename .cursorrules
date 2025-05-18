@@ -1,0 +1,101 @@
+Actua como un desarrollador web experto en backend con Node.js y Nest.js
+
+<contexto>
+Estoy desarrollando una tienda web con dos fases:
+
+Fase 1 (actual):
+
+- Los usuarios pueden registrarse, crear un perfil, subir productos y venderlos.
+- La plataforma gestiona las publicaciones y el contacto/compras entre usuarios.
+- La prioridad es crear una base sólida, escalable, con arquitectura limpia y preparada para expandirse.
+
+Fase 2 (futura):
+- Se añadirá un sistema de afiliados.
+- Los usuarios afiliados podrán seleccionar productos de otros vendedores, promocionarlos y ganar comisiones por cada venta realizada a través de su enlace o usuario.
+- La lógica de comisiones, seguimiento de ventas por afiliado y reportes será integrada sin romper la arquitectura de la Fase 1.
+
+</contexto>
+
+<estructura-y-arquitectura-del-proyecto>
+
+1. ARQUITECTURA GENERAL
+- Framework: NestJS (Node.js)
+- Base de datos: Prisma ORM
+- Lenguaje: TypeScript
+- Patrón de diseño: Arquitectura modular con Clean Architecture
+
+2. ESTRUCTURA DE CARPETAS
+/backend
+├── src/                    # Código fuente principal
+│   ├── users/             # Módulo de gestión de usuarios
+│   ├── products/          # Módulo de productos
+│   ├── auth/              # Módulo de autenticación
+│   ├── categories/        # Módulo de categorías
+│   ├── aws/               # Integración con servicios AWS
+│   ├── common/            # Componentes compartidos
+│   ├── types/             # Definiciones de tipos
+│   └── prisma/            # Configuración de Prisma
+├── prisma/                # Modelos y migraciones de BD
+├── test/                  # Pruebas unitarias y e2e
+└── dist/                  # Código compilado
+
+3. ARQUITECTURA DE MÓDULOS
+Cada módulo sigue la estructura NestJS:
+- Controllers: Manejo de rutas HTTP
+- Services: Lógica de negocio
+- DTOs: Validación de datos
+- Entities: Modelos de datos
+- Interfaces: Tipos y contratos
+- Guards: Protección de rutas
+- Decorators: Metadatos personalizados
+
+4. PATRONES DE DISEÑO IMPLEMENTADOS
+- Repository Pattern: Para acceso a datos
+- Dependency Injection: Para inyección de servicios
+- DTO Pattern: Para transferencia de datos
+- Guard Pattern: Para autenticación/autorización
+- Interceptor Pattern: Para transformación de respuestas
+
+5. CAPAS DE LA APLICACIÓN
+- Presentación (Controllers)
+- Aplicación (Services)
+- Dominio (Entities/Interfaces)
+- Infraestructura (Prisma/Repositories)
+
+6. CARACTERÍSTICAS TÉCNICAS
+- Validación: class-validator
+- Documentación: Swagger/OpenAPI
+- Testing: Jest
+- Formateo: Prettier
+- Linting: ESLint
+- Control de versiones: Git
+
+7. PREPARACIÓN PARA ESCALABILIDAD
+- Módulos independientes
+- Interfaces bien definidas
+- Separación clara de responsabilidades
+- Preparado para microservicios
+- Estructura lista para sistema de afiliados
+
+8. SEGURIDAD
+- Autenticación JWT
+- Guards de autorización
+- Validación de datos
+- Sanitización de inputs
+- Manejo seguro de sesiones
+
+9. INTEGRACIÓN CON SERVICIOS EXTERNOS
+- AWS S3 para almacenamiento
+- Servicios de email
+- Servicios de pago (preparado)
+
+10. CONSIDERACIONES FUTURAS
+- Sistema de afiliados
+- Sistema de comisiones
+- Tracking de ventas
+- Reportes y analytics
+</estructura-y-arquitectura-del-proyecto>
+
+<objetivo-general>
+Crear una tienda estilo "Mercado Libre" en la Fase 1 que evolucione en la Fase 2 hacia una tienda con sistema de afiliados, tipo Amazon Afiliados.
+</objetivo-general>
