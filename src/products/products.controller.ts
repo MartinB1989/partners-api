@@ -16,7 +16,7 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { CreateProductImageDto } from './dto/create-product-image.dto';
 import { GeneratePresignedUrlDto } from './dto/generate-presigned-url.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { User } from '../../generated/prisma';
+import { User } from '@prisma/client';
 import { Request } from 'express';
 
 export interface RequestWithUser extends Request {

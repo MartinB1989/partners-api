@@ -10,6 +10,60 @@ curl -X GET "${BASE_URL}/categories"
 ```
 La respuesta incluirá la jerarquía completa de cada categoría (padre e hijos).
 
+### Obtener la jerarquía completa de categorías
+```bash
+curl -X GET "${BASE_URL}/categories/hierarchy"
+```
+
+Esta ruta devuelve todas las categorías organizadas en una estructura jerárquica anidada:
+- Categorías de nivel 1 como elementos raíz
+- Cada categoría incluye sus subcategorías anidadas en la propiedad `children`
+- Las subcategorías de nivel 3 están anidadas dentro de sus respectivas categorías de nivel 2
+
+#### Ejemplo de Respuesta:
+
+```json
+[
+  {
+    "id": 1,
+    "name": "Electrónica",
+    "idName": "electronica",
+    "level": 1,
+    "parentId": null,
+    "children": [
+      {
+        "id": 2,
+        "name": "Teléfonos",
+        "idName": "telefonos",
+        "level": 2,
+        "parentId": 1,
+        "children": [
+          {
+            "id": 3,
+            "name": "Smartphones",
+            "idName": "smartphones",
+            "level": 3,
+            "parentId": 2,
+            "children": []
+          },
+          {
+            "id": 4,
+            "name": "Teléfonos básicos",
+            "idName": "telefonos-basicos",
+            "level": 3,
+            "parentId": 2,
+            "children": []
+          }
+        ]
+      }
+    ]
+  }
+]
+```
+
+#### Caso de Uso:
+Ideal para construir menús de navegación, filtros por categoría, o árboles de selección en una interfaz de usuario.
+
 ### Crear una categoría (solo administradores)
 ```bash
 curl -X POST \

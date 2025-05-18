@@ -18,7 +18,8 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "fix:lineendings": "prettier --write \"**/*.{ts,js,json,md}\" --end-of-line lf"
+    "fix:lineendings": "prettier --write \"**/*.{ts,js,json,md}\" --end-of-line lf",
+    "db:seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.800.0",

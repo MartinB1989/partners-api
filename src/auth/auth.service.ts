@@ -6,7 +6,7 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import * as bcrypt from 'bcrypt';
 import { AdminLoginDto } from './dto/admin-login.dto';
-import { Role } from '../../generated/prisma';
+import { Role } from '@prisma/client';
 
 @Injectable()
 export class AuthService {

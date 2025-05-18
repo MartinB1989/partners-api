@@ -10,12 +10,12 @@ import {
   Get,
   Query,
 } from '@nestjs/common';
-import { CategoriesService } from './categories.service';
+import { CategoriesService, CategoryWithChildren } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { Role } from '../../generated/prisma';
+import { Role } from '@prisma/client';
 import { FilterCategoryDto } from './dto/filter-category.dto';
 
 @Controller('categories')
@@ -30,6 +30,11 @@ export class CategoriesController {
   @Get('filter')
   findByFilters(@Query() filters: FilterCategoryDto) {
     return this.categoriesService.findByFilters(filters);
+  }
+
+  @Get('hierarchy')
+  getFullHierarchy(): Promise<CategoryWithChildren[]> {
+    return this.categoriesService.getFullHierarchy();
   }
 
   @Post()

@@ -5,7 +5,7 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
-import { User } from '../../generated/prisma';
+import { User } from '@prisma/client';
 import { AdminLoginDto } from './dto/admin-login.dto';
 import { AdminProducerGuard } from './guards/admin-producer.guard';
 

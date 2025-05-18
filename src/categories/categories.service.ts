@@ -6,11 +6,15 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
-import { Category, Prisma } from '../../generated/prisma';
+import { Category, Prisma } from '@prisma/client';
 import { FilterCategoryDto } from './dto/filter-category.dto';
 
 interface UpdateCategoryData extends Partial<UpdateCategoryDto> {
   idName?: string;
+}
+
+export interface CategoryWithChildren extends Category {
+  children?: CategoryWithChildren[];
 }
 
 @Injectable()
@@ -97,6 +101,42 @@ export class CategoriesService {
       },
       orderBy: [{ level: 'asc' }, { name: 'asc' }],
     });
+  }
+
+  async getFullHierarchy(): Promise<CategoryWithChildren[]> {
+    // Obtener todas las categorías
+    const allCategories = await this.prisma.category.findMany({
+      orderBy: [{ level: 'asc' }, { name: 'asc' }],
+    });
+
+    // Organizar en un mapa para facilitar el acceso
+    const categoriesMap = new Map<number, CategoryWithChildren>();
+    allCategories.forEach((category) => {
+      categoriesMap.set(category.id, { ...category, children: [] });
+    });
+
+    // Construir la jerarquía
+    const rootCategories: CategoryWithChildren[] = [];
+
+    // Iterar sobre todas las categorías y organizarlas
+    allCategories.forEach((category) => {
+      const categoryWithChildren = categoriesMap.get(category.id);
+
+      if (categoryWithChildren) {
+        if (category.level === 1) {
+          // Es una categoría de nivel 1 (raíz)
+          rootCategories.push(categoryWithChildren);
+        } else if (category.parentId) {
+          // Es una categoría de nivel 2 o 3, agregarla como hijo de su padre
+          const parent = categoriesMap.get(category.parentId);
+          if (parent && parent.children) {
+            parent.children.push(categoryWithChildren);
+          }
+        }
+      }
+    });
+
+    return rootCategories;
   }
 
   async create(createCategoryDto: CreateCategoryDto): Promise<Category> {
