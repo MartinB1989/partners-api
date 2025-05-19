@@ -24,6 +24,11 @@ import { GetUser } from '../auth/decorators/get-user.decorator';
 import { DeliveryType, User } from '@prisma/client';
 import { CartCookies } from './interfaces/cookies.interface';
 
+// Extender la interfaz Request de Express para incluir las cookies tipadas
+interface RequestWithCookies extends Request {
+  cookies: CartCookies;
+}
+
 @Controller('carts')
 export class CartsController {
   constructor(private readonly cartsService: CartsService) {}
@@ -38,11 +43,11 @@ export class CartsController {
   // Obtener carrito para usuario anónimo (con sesión)
   @Get('anonymous')
   async findAnonymousCart(
-    @Req() req: Request & { cookies: CartCookies },
+    @Req() req: RequestWithCookies,
     @Res({ passthrough: true }) res: Response,
   ) {
     // Obtener el ID de sesión de la cookie o crear uno nuevo
-    let sessionId = req.cookies?.cart_session_id;
+    let sessionId = req.cookies.cart_session_id;
 
     if (!sessionId) {
       sessionId = randomUUID();
@@ -71,12 +76,12 @@ export class CartsController {
   // Añadir item al carrito anónimo
   @Post('anonymous/items')
   async addItemToAnonymousCart(
-    @Req() req: Request & { cookies: CartCookies },
+    @Req() req: RequestWithCookies,
     @Res({ passthrough: true }) res: Response,
     @Body() addItemDto: AddItemDto,
   ) {
     // Obtener el ID de sesión de la cookie o crear uno nuevo
-    let sessionId = req.cookies?.cart_session_id;
+    let sessionId = req.cookies.cart_session_id;
 
     if (!sessionId) {
       sessionId = randomUUID();
@@ -111,11 +116,11 @@ export class CartsController {
   // Actualizar cantidad de un item en el carrito anónimo
   @Patch('anonymous/items/:productId')
   async updateAnonymousItemQuantity(
-    @Req() req: Request & { cookies: CartCookies },
+    @Req() req: RequestWithCookies,
     @Param('productId') productId: string,
     @Body() updateItemQuantityDto: UpdateItemQuantityDto,
   ) {
-    const sessionId = req.cookies?.cart_session_id;
+    const sessionId = req.cookies.cart_session_id;
 
     if (!sessionId) {
       throw new Error('No se encontró la sesión del carrito');
@@ -143,10 +148,10 @@ export class CartsController {
   // Eliminar item del carrito anónimo
   @Delete('anonymous/items/:productId')
   async removeItemFromAnonymousCart(
-    @Req() req: Request & { cookies: CartCookies },
+    @Req() req: RequestWithCookies,
     @Param('productId') productId: string,
   ) {
-    const sessionId = req.cookies?.cart_session_id;
+    const sessionId = req.cookies.cart_session_id;
 
     if (!sessionId) {
       throw new Error('No se encontró la sesión del carrito');
@@ -170,10 +175,10 @@ export class CartsController {
   // Actualizar carrito anónimo (dirección, tipo de entrega)
   @Patch('anonymous')
   async updateAnonymousCart(
-    @Req() req: Request & { cookies: CartCookies },
+    @Req() req: RequestWithCookies,
     @Body() updateCartDto: UpdateCartDto,
   ) {
-    const sessionId = req.cookies?.cart_session_id;
+    const sessionId = req.cookies.cart_session_id;
 
     if (!sessionId) {
       throw new Error('No se encontró la sesión del carrito');
@@ -193,8 +198,8 @@ export class CartsController {
 
   // Vaciar carrito anónimo
   @Delete('anonymous/clear')
-  async clearAnonymousCart(@Req() req: Request & { cookies: CartCookies }) {
-    const sessionId = req.cookies?.cart_session_id;
+  async clearAnonymousCart(@Req() req: RequestWithCookies) {
+    const sessionId = req.cookies.cart_session_id;
 
     if (!sessionId) {
       throw new Error('No se encontró la sesión del carrito');
@@ -209,9 +214,9 @@ export class CartsController {
   @Post('transfer')
   async transferCartToUser(
     @GetUser() user: Omit<User, 'password'>,
-    @Req() req: Request & { cookies: CartCookies },
+    @Req() req: RequestWithCookies,
   ) {
-    const sessionId = req.cookies?.cart_session_id;
+    const sessionId = req.cookies.cart_session_id;
 
     if (!sessionId) {
       // Si no hay sesión, simplemente devolver el carrito del usuario
@@ -260,10 +265,10 @@ export class CartsController {
   // Establecer tipo de entrega para carrito anónimo
   @Patch('anonymous/delivery-type')
   async setAnonymousDeliveryType(
-    @Req() req: Request & { cookies: CartCookies },
+    @Req() req: RequestWithCookies,
     @Body('deliveryType') deliveryType: DeliveryType,
   ) {
-    const sessionId = req.cookies?.cart_session_id;
+    const sessionId = req.cookies.cart_session_id;
 
     if (!sessionId) {
       throw new Error('No se encontró la sesión del carrito');
