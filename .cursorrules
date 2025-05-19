@@ -13,7 +13,7 @@ Fase 2 (futura):
 - Se añadirá un sistema de afiliados.
 - Los usuarios afiliados podrán seleccionar productos de otros vendedores, promocionarlos y ganar comisiones por cada venta realizada a través de su enlace o usuario.
 - La lógica de comisiones, seguimiento de ventas por afiliado y reportes será integrada sin romper la arquitectura de la Fase 1.
-
+- La web es para Argentina, la moneda siempre sera peso argentino
 </contexto>
 
 <estructura-y-arquitectura-del-proyecto>
