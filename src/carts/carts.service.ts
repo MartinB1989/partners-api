@@ -556,6 +556,7 @@ export class CartsService {
   }
 
   // Crear una dirección
+  // eslint-disable-next-line @typescript-eslint/require-await
   async createAddress(createAddressDto: CreateAddressDto): Promise<Address> {
     return this.prisma.address.create({
       data: {
@@ -571,6 +572,7 @@ export class CartsService {
   }
 
   // Obtener direcciones de un usuario
+  // eslint-disable-next-line @typescript-eslint/require-await
   async findAddressesByUserId(userId: string): Promise<Address[]> {
     return this.prisma.address.findMany({
       where: {
