@@ -9,6 +9,7 @@ import { ProductsModule } from './products/products.module';
 import { AwsModule } from './aws/aws.module';
 import { CategoriesModule } from './categories/categories.module';
 import { CartsModule } from './carts/carts.module';
+import { PickupAddressesModule } from './pickup-addresses/pickup-addresses.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { CartsModule } from './carts/carts.module';
     AwsModule,
     CategoriesModule,
     CartsModule,
+    PickupAddressesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

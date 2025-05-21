@@ -8,17 +8,18 @@ datasource db {
 }
 
 model User {
-  id        String    @id @default(uuid())
-  email     String    @unique
-  password  String
-  name      String
-  roles     Role[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  products  Product[]
-  carts     Cart[]
-  addresses Address[]
-  orders    Order[]
+  id             String          @id @default(uuid())
+  email          String          @unique
+  password       String
+  name           String
+  roles          Role[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  products       Product[]
+  carts          Cart[]
+  addresses      Address[]
+  pickupAddresses PickupAddress[]
+  orders         Order[]
 }
 
 model Product {
@@ -112,7 +113,7 @@ model Address {
   city      String
   state     String
   zipCode   String
-  country   String   @default("España")
+  country   String   @default("Argentina")
   userId    String? // Puede pertenecer a un usuario o no
   user      User?    @relation(fields: [userId], references: [id])
   carts     Cart[] // Relación con carritos que usan esta dirección
@@ -159,6 +160,25 @@ model OrderItem {
 
   @@index([orderId])
   @@index([productId])
+}
+
+model PickupAddress {
+  id          Int      @id @default(autoincrement())
+  name        String   // Nombre de referencia (ej: "Tienda Principal", "Depósito")
+  street      String
+  number      String
+  city        String
+  state       String
+  zipCode     String
+  country     String   @default("Argentina")
+  additionalInfo String? // Información adicional como piso, departamento, etc.
+  isActive    Boolean  @default(true)
+  userId      String   // Siempre pertenecerá a un usuario productor
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
 }
 
 enum DeliveryType {
