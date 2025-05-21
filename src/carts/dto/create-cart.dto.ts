@@ -4,17 +4,19 @@ import { DeliveryType } from '@prisma/client';
 export class CreateCartDto {
   @IsOptional()
   @IsString()
-  sessionId?: string;
-
-  @IsOptional()
   @IsUUID()
   userId?: string;
 
   @IsOptional()
+  @IsString()
+  sessionId?: string;
+
+  @IsOptional()
+  @IsString()
   @IsUUID()
   addressId?: string;
 
-  @IsEnum(DeliveryType)
   @IsOptional()
+  @IsEnum(DeliveryType)
   deliveryType?: DeliveryType;
 }

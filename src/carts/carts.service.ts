@@ -26,6 +26,7 @@ export class CartsService {
         userId: createCartDto.userId,
         addressId: createCartDto.addressId,
         deliveryType: createCartDto.deliveryType || DeliveryType.PICKUP,
+        total: 0, // Inicializar el total en 0
       },
       include: {
         items: {
@@ -42,6 +43,23 @@ export class CartsService {
     });
 
     return cart as unknown as CartWithRelations;
+  }
+
+  // Método privado para calcular y actualizar el total del carrito
+  private async updateCartTotal(cartId: string): Promise<void> {
+    // Obtener todos los items del carrito con sus subtotales
+    const cartItems = await this.prisma.cartItem.findMany({
+      where: { cartId },
+    });
+
+    // Calcular el total sumando los subtotales
+    const total = cartItems.reduce((sum, item) => sum + item.subTotal, 0);
+
+    // Actualizar el total del carrito
+    await this.prisma.cart.update({
+      where: { id: cartId },
+      data: { total },
+    });
   }
 
   // Encontrar un carrito para un usuario registrado
@@ -141,6 +159,9 @@ export class CartsService {
       );
     }
 
+    // Calcular el subtotal
+    const subTotal = product.price * addItemDto.quantity;
+
     // Verificar si el producto ya está en el carrito
     const existingItem = await this.prisma.cartItem.findUnique({
       where: {
@@ -151,14 +172,20 @@ export class CartsService {
       },
     });
 
+    let updatedItem;
+
     if (existingItem) {
-      // Actualizar la cantidad
-      const updatedItem = await this.prisma.cartItem.update({
+      // Actualizar la cantidad y el subtotal
+      const newQuantity = existingItem.quantity + addItemDto.quantity;
+      const newSubTotal = product.price * newQuantity;
+
+      updatedItem = await this.prisma.cartItem.update({
         where: {
           id: existingItem.id,
         },
         data: {
-          quantity: existingItem.quantity + addItemDto.quantity,
+          quantity: newQuantity,
+          subTotal: newSubTotal,
         },
         include: {
           product: {
@@ -168,31 +195,33 @@ export class CartsService {
           },
         },
       });
-
-      return updatedItem as unknown as CartItemWithProduct;
-    }
-
-    // Crear nuevo item en el carrito
-    const newItem = await this.prisma.cartItem.create({
-      data: {
-        cart: {
-          connect: { id: cartId },
+    } else {
+      // Crear nuevo item en el carrito con el subtotal
+      updatedItem = await this.prisma.cartItem.create({
+        data: {
+          cart: {
+            connect: { id: cartId },
+          },
+          product: {
+            connect: { id: addItemDto.productId },
+          },
+          quantity: addItemDto.quantity,
+          subTotal,
         },
-        product: {
-          connect: { id: addItemDto.productId },
-        },
-        quantity: addItemDto.quantity,
-      },
-      include: {
-        product: {
-          include: {
-            images: true,
+        include: {
+          product: {
+            include: {
+              images: true,
+            },
           },
         },
-      },
-    });
+      });
+    }
 
-    return newItem as unknown as CartItemWithProduct;
+    // Actualizar el total del carrito
+    await this.updateCartTotal(cartId);
+
+    return updatedItem as unknown as CartItemWithProduct;
   }
 
   // Actualizar la cantidad de un producto en el carrito
@@ -232,12 +261,16 @@ export class CartsService {
       );
     }
 
+    // Calcular el nuevo subtotal
+    const subTotal = product.price * updateItemQuantityDto.quantity;
+
     const updatedItem = await this.prisma.cartItem.update({
       where: {
         id: existingItem.id,
       },
       data: {
         quantity: updateItemQuantityDto.quantity,
+        subTotal,
       },
       include: {
         product: {
@@ -247,6 +280,9 @@ export class CartsService {
         },
       },
     });
+
+    // Actualizar el total del carrito
+    await this.updateCartTotal(cartId);
 
     return updatedItem as unknown as CartItemWithProduct;
   }
@@ -269,11 +305,34 @@ export class CartsService {
       );
     }
 
-    return this.prisma.cartItem.delete({
+    // Eliminar el item
+    await this.prisma.cartItem.delete({
       where: {
         id: existingItem.id,
       },
     });
+
+    // Actualizar el total del carrito
+    await this.updateCartTotal(cartId);
+
+    // Obtener el carrito actualizado para devolver
+    const updatedCart = await this.prisma.cart.findUnique({
+      where: { id: cartId },
+      include: {
+        items: {
+          include: {
+            product: {
+              include: {
+                images: true,
+              },
+            },
+          },
+        },
+        address: true,
+      },
+    });
+
+    return updatedCart;
   }
 
   // Actualizar el carrito (dirección, tipo de entrega)
@@ -318,75 +377,167 @@ export class CartsService {
     // Verificar que el carrito existe
     const cart = await this.prisma.cart.findUnique({
       where: { id },
+      include: { items: true },
     });
 
     if (!cart) {
       throw new NotFoundException(`Carrito con ID ${id} no encontrado`);
     }
 
-    // Eliminar todos los items del carrito
+    // Eliminar todos los items
     await this.prisma.cartItem.deleteMany({
       where: {
         cartId: id,
       },
     });
 
-    const clearedCart = await this.prisma.cart.findUnique({
+    // Actualizar el total del carrito a 0
+    await this.prisma.cart.update({
+      where: { id },
+      data: { total: 0 },
+    });
+
+    // Obtener el carrito actualizado para devolver
+    const updatedCart = await this.prisma.cart.findUnique({
       where: { id },
       include: {
-        items: true,
+        items: {
+          include: {
+            product: {
+              include: {
+                images: true,
+              },
+            },
+          },
+        },
         address: true,
       },
     });
 
-    return clearedCart as unknown as CartWithRelations;
+    return updatedCart as unknown as CartWithRelations;
   }
 
-  // Transferir carrito de sesión a usuario registrado
+  // Transferir un carrito anónimo a un usuario registrado
   async transferCartToUser(
     sessionId: string,
     userId: string,
   ): Promise<CartWithRelations> {
-    // Verificar si existe un carrito para la sesión
-    const sessionCart = await this.findOneBySessionId(sessionId);
+    // Buscar el carrito anónimo
+    const anonymousCart = await this.prisma.cart.findFirst({
+      where: {
+        sessionId,
+      },
+      include: {
+        items: true,
+      },
+    });
 
-    // Verificar si existe un carrito para el usuario
-    const userCart = await this.findOneByUserId(userId);
-
-    // Si el carrito de sesión está vacío, simplemente devolver el carrito del usuario
-    if (sessionCart.items.length === 0) {
-      return userCart;
+    if (!anonymousCart) {
+      throw new NotFoundException(
+        `Carrito con sessionId ${sessionId} no encontrado`,
+      );
     }
 
-    // Transferir los items del carrito de sesión al carrito del usuario
-    for (const item of sessionCart.items) {
-      try {
-        await this.addItem(userCart.id, {
-          productId: item.productId,
-          quantity: item.quantity,
+    // Buscar si el usuario ya tiene un carrito
+    const userCart = await this.prisma.cart.findFirst({
+      where: {
+        userId,
+      },
+      include: {
+        items: true,
+      },
+    });
+
+    // Si el usuario no tiene carrito, asignarle el anónimo
+    if (!userCart) {
+      const updatedCart = await this.prisma.cart.update({
+        where: {
+          id: anonymousCart.id,
+        },
+        data: {
+          userId,
+          sessionId: null,
+        },
+        include: {
+          items: {
+            include: {
+              product: {
+                include: {
+                  images: true,
+                },
+              },
+            },
+          },
+          address: true,
+        },
+      });
+
+      return updatedCart as unknown as CartWithRelations;
+    }
+
+    // Si el usuario ya tiene carrito, transferir los items del carrito anónimo al carrito del usuario
+    for (const item of anonymousCart.items) {
+      // Verificar si el item ya existe en el carrito del usuario
+      const existingItem = await this.prisma.cartItem.findUnique({
+        where: {
+          cartId_productId: {
+            cartId: userCart.id,
+            productId: item.productId,
+          },
+        },
+      });
+
+      // Obtener el producto para calcular el subtotal
+      const product = await this.prisma.product.findUnique({
+        where: { id: item.productId },
+      });
+
+      if (!product) {
+        continue; // Saltar si el producto no existe
+      }
+
+      if (existingItem) {
+        // Actualizar la cantidad y el subtotal del item existente
+        const newQuantity = existingItem.quantity + item.quantity;
+        const newSubTotal = product.price * newQuantity;
+
+        await this.prisma.cartItem.update({
+          where: {
+            id: existingItem.id,
+          },
+          data: {
+            quantity: newQuantity,
+            subTotal: newSubTotal,
+          },
         });
-      } catch (error) {
-        // Si hay error, continuar con el siguiente item
-        console.error(
-          `Error al transferir producto ${item.productId} al carrito del usuario: ${error.message}`,
-        );
+      } else {
+        // Crear un nuevo item en el carrito del usuario
+        await this.prisma.cartItem.create({
+          data: {
+            cartId: userCart.id,
+            productId: item.productId,
+            quantity: item.quantity,
+            subTotal: item.subTotal,
+          },
+        });
       }
     }
 
-    // Transferir configuración del carrito
-    if (sessionCart.addressId) {
-      await this.update(userCart.id, {
-        addressId: sessionCart.addressId,
-        deliveryType: sessionCart.deliveryType,
-      });
-    }
+    // Actualizar el total del carrito del usuario
+    await this.updateCartTotal(userCart.id);
 
-    // Limpiar el carrito de sesión
-    await this.clear(sessionCart.id);
+    // Eliminar el carrito anónimo
+    await this.prisma.cart.delete({
+      where: {
+        id: anonymousCart.id,
+      },
+    });
 
     // Devolver el carrito actualizado del usuario
     const updatedUserCart = await this.prisma.cart.findUnique({
-      where: { id: userCart.id },
+      where: {
+        id: userCart.id,
+      },
       include: {
         items: {
           include: {

@@ -85,6 +85,7 @@ model Cart {
   address      Address?     @relation(fields: [addressId], references: [id])
   addressId    String? // Dirección opcional para el envío
   deliveryType DeliveryType // Tipo de entrega (envío o retiro)
+  total        Float        @default(0) // Total del carrito
 
   @@index([sessionId])
   @@index([userId])
@@ -97,6 +98,7 @@ model CartItem {
   productId Int
   product   Product  @relation(fields: [productId], references: [id])
   quantity  Int
+  subTotal  Float    @default(0) // Subtotal del item (precio * cantidad)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
