@@ -172,6 +172,8 @@ model PickupAddress {
   zipCode     String
   country     String   @default("Argentina")
   additionalInfo String? // Información adicional como piso, departamento, etc.
+  latitude    Float?   // Coordenada de latitud opcional
+  longitude   Float?   // Coordenada de longitud opcional
   isActive    Boolean  @default(true)
   userId      String   // Siempre pertenecerá a un usuario productor
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)

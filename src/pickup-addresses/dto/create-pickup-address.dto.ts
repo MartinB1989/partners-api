@@ -1,4 +1,10 @@
-import { IsString, IsNotEmpty, IsOptional, IsBoolean } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsBoolean,
+  IsNumber,
+} from 'class-validator';
 
 /**
  * DTO para la creación de una dirección de retiro
@@ -62,6 +68,20 @@ export class CreatePickupAddressDto {
   @IsString()
   @IsOptional()
   additionalInfo?: string;
+
+  /**
+   * Coordenada de latitud para ubicación geográfica
+   */
+  @IsNumber()
+  @IsOptional()
+  latitude?: number;
+
+  /**
+   * Coordenada de longitud para ubicación geográfica
+   */
+  @IsNumber()
+  @IsOptional()
+  longitude?: number;
 
   /**
    * Indica si la dirección está activa para retiros

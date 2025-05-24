@@ -24,6 +24,8 @@ curl -X GET http://localhost:3000/pickup-addresses \
             "zipCode": "1757",
             "country": "Argentina",
             "additionalInfo": "",
+            "latitude": -34.7512,
+            "longitude": -58.5889,
             "isActive": true,
             "userId": "360ca087-e4ef-4d1d-8460-cbc490038e79",
             "createdAt": "2025-05-21T05:02:00.666Z",
@@ -53,6 +55,8 @@ curl -X GET http://localhost:3000/pickup-addresses/ID_DIRECCION \
   "zipCode": "C1043AAZ",
   "country": "Argentina",
   "additionalInfo": "Planta baja, local 4",
+  "latitude": -34.6037,
+  "longitude": -58.3816,
   "isActive": true,
   "userId": 5,
   "createdAt": "2023-10-15T14:30:00.000Z",
@@ -74,6 +78,8 @@ curl -X POST http://localhost:3000/pickup-addresses \
     "state": "CABA",
     "zipCode": "C1043AAZ",
     "additionalInfo": "Planta baja, local 4",
+    "latitude": -34.6037,
+    "longitude": -58.3816,
     "isActive": true
   }'
 ```
@@ -90,6 +96,8 @@ curl -X POST http://localhost:3000/pickup-addresses \
   "zipCode": "C1043AAZ",
   "country": "Argentina",
   "additionalInfo": "Planta baja, local 4",
+  "latitude": -34.6037,
+  "longitude": -58.3816,
   "isActive": true,
   "userId": 5,
   "createdAt": "2023-10-15T14:45:00.000Z",
