@@ -123,7 +123,7 @@ model Address {
 }
 
 model Order {
-  id           String      @id @default(uuid())
+  id           Int         @id @default(autoincrement())
   userId       String?
   user         User?       @relation(fields: [userId], references: [id])
   addressId    String?
@@ -132,7 +132,7 @@ model Order {
   name         String
   phone        String?
   total        Float
-  status       OrderStatus @default(PENDING)
+  status       OrderStatus @default(PENDING_PAYMENT)
   deliveryType DeliveryType
   sessionId    String?
   notes        String?
@@ -146,13 +146,14 @@ model Order {
 }
 
 model OrderItem {
-  id        String   @id @default(uuid())
-  orderId   String
+  id        Int      @id @default(autoincrement())
+  orderId   Int
   order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   productId Int
   product   Product  @relation(fields: [productId], references: [id])
   title     String
-  price     Float
+  unitPrice Float
+  subTotal  Float
   quantity  Int
   imageUrl  String?
   createdAt DateTime @default(now())
@@ -189,6 +190,7 @@ enum DeliveryType {
 }
 
 enum OrderStatus {
+  PENDING_PAYMENT
   PENDING
   PROCESSING
   SHIPPED
