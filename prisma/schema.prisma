@@ -8,18 +8,18 @@ datasource db {
 }
 
 model User {
-  id             String          @id @default(uuid())
-  email          String          @unique
-  password       String
-  name           String
-  roles          Role[]
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  products       Product[]
-  carts          Cart[]
-  addresses      Address[]
+  id              String          @id @default(uuid())
+  email           String          @unique
+  password        String
+  name            String
+  roles           Role[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  addresses       Address[]
+  carts           Cart[]
+  orders          Order[]
   pickupAddresses PickupAddress[]
-  orders         Order[]
+  products        Product[]
 }
 
 model Product {
@@ -32,11 +32,11 @@ model Product {
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
   userId            String
-  user              User              @relation(fields: [userId], references: [id])
-  images            ProductImage[]
-  productCategories ProductCategory[]
   cartItems         CartItem[]
   orderItems        OrderItem[]
+  user              User              @relation(fields: [userId], references: [id])
+  productCategories ProductCategory[]
+  images            ProductImage[]
 }
 
 model ProductImage {
@@ -55,8 +55,8 @@ model Category {
   id                Int               @id @default(autoincrement())
   name              String
   idName            String            @unique
-  level             Int               @default(1) // 1: nivel superior, 2: nivel medio, 3: nivel inferior
-  parentId          Int? // Referencia al ID de la categoría padre
+  level             Int               @default(1)
+  parentId          Int?
   parent            Category?         @relation("CategoryHierarchy", fields: [parentId], references: [id])
   children          Category[]        @relation("CategoryHierarchy")
   productCategories ProductCategory[]
@@ -69,24 +69,24 @@ model ProductCategory {
   id         Int      @id @default(autoincrement())
   productId  Int
   categoryId Int
-  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([productId, categoryId])
 }
 
 model Cart {
   id           String       @id @default(uuid())
-  sessionId    String? // Para usuarios anónimos
-  userId       String? // Para usuarios registrados
-  user         User?        @relation(fields: [userId], references: [id])
-  items        CartItem[]
+  sessionId    String?
+  userId       String?
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
+  addressId    String?
+  deliveryType DeliveryType
+  total        Float        @default(0)
   address      Address?     @relation(fields: [addressId], references: [id])
-  addressId    String? // Dirección opcional para el envío
-  deliveryType DeliveryType // Tipo de entrega (envío o retiro)
-  total        Float        @default(0) // Total del carrito
+  user         User?        @relation(fields: [userId], references: [id])
+  items        CartItem[]
 
   @@index([sessionId])
   @@index([userId])
@@ -95,13 +95,13 @@ model Cart {
 model CartItem {
   id        String   @id @default(uuid())
   cartId    String
-  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
   productId Int
-  product   Product  @relation(fields: [productId], references: [id])
   quantity  Int
-  subTotal  Float    @default(0) // Subtotal del item (precio * cantidad)
+  subTotal  Float    @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id])
 
   @@unique([cartId, productId])
 }
@@ -114,31 +114,31 @@ model Address {
   state     String
   zipCode   String
   country   String   @default("Argentina")
-  userId    String? // Puede pertenecer a un usuario o no
-  user      User?    @relation(fields: [userId], references: [id])
-  carts     Cart[] // Relación con carritos que usan esta dirección
-  orders    Order[]
+  userId    String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  user      User?    @relation(fields: [userId], references: [id])
+  carts     Cart[]
+  orders    Order[]
 }
 
 model Order {
-  id           Int         @id @default(autoincrement())
+  id           Int          @id @default(autoincrement())
   userId       String?
-  user         User?       @relation(fields: [userId], references: [id])
   addressId    String?
-  address      Address?    @relation(fields: [addressId], references: [id])
   email        String
   name         String
   phone        String?
   total        Float
-  status       OrderStatus @default(PENDING_PAYMENT)
+  status       OrderStatus  @default(PENDING_PAYMENT)
   deliveryType DeliveryType
   sessionId    String?
   notes        String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  address      Address?     @relation(fields: [addressId], references: [id])
+  user         User?        @relation(fields: [userId], references: [id])
   items        OrderItem[]
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
 
   @@index([userId])
   @@index([sessionId])
@@ -148,9 +148,7 @@ model Order {
 model OrderItem {
   id        Int      @id @default(autoincrement())
   orderId   Int
-  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   productId Int
-  product   Product  @relation(fields: [productId], references: [id])
   title     String
   unitPrice Float
   subTotal  Float
@@ -158,35 +156,37 @@ model OrderItem {
   imageUrl  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id])
 
   @@index([orderId])
   @@index([productId])
 }
 
 model PickupAddress {
-  id          Int      @id @default(autoincrement())
-  name        String   // Nombre de referencia (ej: "Tienda Principal", "Depósito")
-  street      String
-  number      String
-  city        String
-  state       String
-  zipCode     String
-  country     String   @default("Argentina")
-  additionalInfo String? // Información adicional como piso, departamento, etc.
-  latitude    Float?   // Coordenada de latitud opcional
-  longitude   Float?   // Coordenada de longitud opcional
-  isActive    Boolean  @default(true)
-  userId      String   // Siempre pertenecerá a un usuario productor
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             Int      @id @default(autoincrement())
+  name           String
+  street         String
+  number         String
+  city           String
+  state          String
+  zipCode        String
+  country        String   @default("Argentina")
+  additionalInfo String?
+  latitude       Float?
+  longitude      Float?
+  isActive       Boolean  @default(true)
+  userId         String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
 
 enum DeliveryType {
-  SHIPPING // Envío a domicilio
-  PICKUP // Retirar en tienda
+  SHIPPING
+  PICKUP
 }
 
 enum OrderStatus {
