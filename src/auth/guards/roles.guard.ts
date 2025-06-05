@@ -20,7 +20,7 @@ export class RolesGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     // Primero verificamos que el usuario esté autenticado
-    const jwtGuard = new JwtAuthGuard();
+    const jwtGuard = new JwtAuthGuard(this.reflector);
     const isAuthenticated = await jwtGuard.canActivate(context);
 
     if (!isAuthenticated) {

@@ -20,6 +20,12 @@ export class PickupAddressesService {
     });
   }
 
+  async findAll() {
+    return this.prisma.pickupAddress.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   async findAllByUser(userId: string) {
     return this.prisma.pickupAddress.findMany({
       where: { userId },

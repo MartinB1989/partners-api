@@ -14,6 +14,7 @@ import { CreatePickupAddressDto, UpdatePickupAddressDto } from './dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { Public } from '../auth/decorators/public.decorator';
 import { Role, User } from '@prisma/client';
 import { GetUser } from '../auth/decorators/get-user.decorator';
 
@@ -33,6 +34,12 @@ export class PickupAddressesController {
   @Get()
   findAll(@GetUser() user: User) {
     return this.pickupAddressesService.findAllByUser(user.id);
+  }
+
+  @Public()
+  @Get('public')
+  findAllPublic() {
+    return this.pickupAddressesService.findAll();
   }
 
   @Get(':id')
