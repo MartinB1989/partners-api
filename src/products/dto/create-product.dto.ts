@@ -7,7 +7,31 @@ import {
   IsArray,
   ArrayMinSize,
   ArrayMaxSize,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+
+export class ProductSizeDto {
+  @IsNotEmpty()
+  @IsNumber()
+  @Min(0)
+  weight: number;
+
+  @IsNotEmpty()
+  @IsNumber()
+  @Min(0)
+  length: number;
+
+  @IsNotEmpty()
+  @IsNumber()
+  @Min(0)
+  height: number;
+
+  @IsNotEmpty()
+  @IsNumber()
+  @Min(0)
+  width: number;
+}
 
 export class CreateProductDto {
   @IsNotEmpty()
@@ -17,6 +41,10 @@ export class CreateProductDto {
   @IsNotEmpty()
   @IsString()
   description: string;
+
+  @IsNotEmpty()
+  @IsString()
+  sku: string;
 
   @IsNotEmpty()
   @IsNumber()
@@ -30,6 +58,11 @@ export class CreateProductDto {
 
   @IsBoolean()
   active: boolean = true;
+
+  @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => ProductSizeDto)
+  size: ProductSizeDto;
 
   @IsArray()
   @ArrayMinSize(1, { message: 'El producto debe tener al menos una categoría' })

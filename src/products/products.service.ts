@@ -19,7 +19,7 @@ export class ProductsService {
   ) {}
 
   async create(createProductDto: CreateProductDto, userId: string) {
-    const { categoryIds, ...productData } = createProductDto;
+    const { categoryIds, size, ...productData } = createProductDto;
 
     // Verificar que las categorías existan
     if (categoryIds && categoryIds.length > 0) {
@@ -36,7 +36,7 @@ export class ProductsService {
       }
     }
 
-    // Crear el producto con sus categorías en una transacción
+    // Crear el producto con sus categorías y dimensiones en una transacción
     return this.prisma.$transaction(async (tx) => {
       // Crear el producto
       const product = await tx.product.create({
@@ -48,6 +48,16 @@ export class ProductsService {
         },
       });
 
+      // Crear las dimensiones del producto
+      if (size) {
+        await tx.productSize.create({
+          data: {
+            ...size,
+            productId: product.id,
+          },
+        });
+      }
+
       // Crear las relaciones con las categorías
       if (categoryIds && categoryIds.length > 0) {
         await tx.productCategory.createMany({
@@ -58,11 +68,12 @@ export class ProductsService {
         });
       }
 
-      // Obtener el producto con las imágenes y categorías
+      // Obtener el producto con las imágenes, dimensiones y categorías
       const productWithRelations = await tx.product.findUnique({
         where: { id: product.id },
         include: {
           images: true,
+          size: true,
           productCategories: {
             include: {
               category: true,
@@ -88,6 +99,7 @@ export class ProductsService {
               order: 'asc',
             },
           },
+          size: true,
           user: {
             select: {
               id: true,
@@ -131,6 +143,7 @@ export class ProductsService {
                 order: 'asc',
               },
             },
+            size: true,
             productCategories: {
               include: {
                 category: true,
@@ -174,6 +187,7 @@ export class ProductsService {
               order: 'asc',
             },
           },
+          size: true,
           productCategories: {
             include: {
               category: true,
@@ -207,6 +221,7 @@ export class ProductsService {
             order: 'asc',
           },
         },
+        size: true,
         user: {
           select: {
             id: true,
@@ -253,7 +268,7 @@ export class ProductsService {
       );
     }
 
-    const { categoryIds, ...productData } = updateProductDto;
+    const { categoryIds, size, ...productData } = updateProductDto;
 
     // Verificar que las categorías existan si se proporcionan
     if (categoryIds && categoryIds.length > 0) {
@@ -278,6 +293,18 @@ export class ProductsService {
         data: productData,
       });
 
+      // Actualizar las dimensiones si se proporcionan
+      if (size) {
+        await tx.productSize.upsert({
+          where: { productId: id },
+          update: size,
+          create: {
+            ...size,
+            productId: id,
+          },
+        });
+      }
+
       // Si hay categoryIds, actualizar las relaciones
       if (categoryIds && categoryIds.length > 0) {
         // Eliminar relaciones existentes
@@ -299,6 +326,7 @@ export class ProductsService {
         where: { id },
         include: {
           images: true,
+          size: true,
           productCategories: {
             include: {
               category: true,
