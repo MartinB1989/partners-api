@@ -104,6 +104,7 @@ export class CartsService {
             product: {
               include: {
                 images: true,
+                size: true,
               },
             },
           },
