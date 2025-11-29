@@ -12,7 +12,14 @@ export class OrdersService {
   constructor(private prisma: PrismaService) {}
 
   async create(createOrderDto: CreateOrderDto): Promise<Order> {
-    const { items, address, total, ...orderData } = createOrderDto;
+    const {
+      items,
+      address,
+      total,
+      deliveryPrice,
+      itemsPriceSum,
+      ...orderData
+    } = createOrderDto;
 
     // Verificar que los productos existan y tengan stock suficiente
     for (const item of items) {
@@ -54,6 +61,8 @@ export class OrdersService {
             ...orderData,
             addressId,
             total,
+            deliveryPrice: deliveryPrice ?? 0,
+            itemsPriceSum: itemsPriceSum ?? 0,
             status: OrderStatus.PENDING_PAYMENT,
             items: {
               create: items.map((item) => ({

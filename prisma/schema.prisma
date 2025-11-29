@@ -137,22 +137,24 @@ model Address {
 }
 
 model Order {
-  id           Int          @id @default(autoincrement())
-  userId       String?
-  addressId    String?
-  email        String
-  name         String
-  phone        String?
-  total        Float
-  status       OrderStatus  @default(PENDING_PAYMENT)
-  deliveryType DeliveryType
-  sessionId    String?
-  notes        String?
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  address      Address?     @relation(fields: [addressId], references: [id])
-  user         User?        @relation(fields: [userId], references: [id])
-  items        OrderItem[]
+  id             Int          @id @default(autoincrement())
+  userId         String?
+  addressId      String?
+  email          String
+  name           String
+  phone          String?
+  total          Float
+  deliveryPrice  Float        @default(0)
+  itemsPriceSum  Float        @default(0)
+  status         OrderStatus  @default(PENDING_PAYMENT)
+  deliveryType   DeliveryType
+  sessionId      String?
+  notes          String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  address        Address?     @relation(fields: [addressId], references: [id])
+  user           User?        @relation(fields: [userId], references: [id])
+  items          OrderItem[]
 
   @@index([userId])
   @@index([sessionId])
