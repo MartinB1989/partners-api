@@ -103,6 +103,53 @@ export class OrdersService {
     }
   }
 
+  async findAll(page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+
+    const [orders, total] = await Promise.all([
+      this.prisma.order.findMany({
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          total: true,
+          deliveryPrice: true,
+          deliveryType: true,
+          status: true,
+          createdAt: true,
+          items: {
+            select: {
+              id: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+      this.prisma.order.count(),
+    ]);
+
+    // Mapear los datos y calcular el total con deliveryPrice
+    const ordersWithCalculatedTotal = orders.map((order) => ({
+      id: order.id,
+      finalTotal: order.total + (order.deliveryType === 'SHIPPING' ? order.deliveryPrice : 0),
+      deliveryType: order.deliveryType,
+      status: order.status,
+      createdAt: order.createdAt,
+      itemsCount: order.items.length,
+    }));
+
+    return {
+      data: ordersWithCalculatedTotal,
+      meta: {
+        total,
+        page,
+        lastPage: Math.ceil(total / limit),
+      },
+    };
+  }
+
   async findById(id: number): Promise<Order> {
     const order = await this.prisma.order.findUnique({
       where: { id },
