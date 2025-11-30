@@ -138,6 +138,7 @@ model Address {
 
 model Order {
   id             Int          @id @default(autoincrement())
+  orderNumber    String       @unique
   userId         String?
   addressId      String?
   email          String
@@ -159,6 +160,7 @@ model Order {
   @@index([userId])
   @@index([sessionId])
   @@index([status])
+  @@index([orderNumber])
 }
 
 model OrderItem {

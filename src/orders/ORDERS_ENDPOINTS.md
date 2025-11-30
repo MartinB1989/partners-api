@@ -63,6 +63,55 @@ curl -X POST \
 
 ## Consulta de órdenes
 
+### Obtener todas las órdenes (con paginación)
+```bash
+curl -X GET \
+  "${BASE_URL}/orders?page=1&limit=10" \
+  -H "Authorization: Bearer {token}"
+```
+
+**Autenticación:**
+- Requiere JWT token en header `Authorization: Bearer {token}`
+- Solo usuarios con rol **ADMIN** pueden acceder
+
+**Parámetros de query:**
+- `page` (opcional): Número de página (por defecto: 1)
+- `limit` (opcional): Cantidad de órdenes por página (por defecto: 10)
+
+**Respuesta:**
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "finalTotal": 3200.00,
+      "deliveryType": "SHIPPING",
+      "status": "PENDING_PAYMENT",
+      "createdAt": "2023-08-01T14:30:00.000Z",
+      "itemsCount": 2
+    },
+    {
+      "id": 2,
+      "finalTotal": 2500.00,
+      "deliveryType": "PICKUP",
+      "status": "PROCESSING",
+      "createdAt": "2023-08-02T10:15:00.000Z",
+      "itemsCount": 1
+    }
+  ],
+  "meta": {
+    "total": 25,
+    "page": 1,
+    "lastPage": 3
+  }
+}
+```
+
+**Detalles de la respuesta:**
+- `finalTotal`: Suma de `total + deliveryPrice` (solo se suma el `deliveryPrice` si `deliveryType` es `SHIPPING`)
+- `itemsCount`: Cantidad total de items en la orden
+- Para obtener los detalles completos de una orden específica, usa el endpoint `GET /api/orders/{id}`
+
 ### Obtener una orden por ID
 ```bash
 curl -X GET \

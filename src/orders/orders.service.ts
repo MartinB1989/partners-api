@@ -6,6 +6,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrderDto } from './dto';
 import { Order, OrderStatus, Prisma } from '@prisma/client';
+import { generateOrderNumber } from './utils/generate-order-number';
 
 @Injectable()
 export class OrdersService {
@@ -55,10 +56,14 @@ export class OrdersService {
           addressId = newAddress.id;
         }
 
+        // Generar número de orden único
+        const orderNumber = generateOrderNumber();
+
         // Crear la orden
         const newOrder = await tx.order.create({
           data: {
             ...orderData,
+            orderNumber,
             addressId,
             total,
             deliveryPrice: deliveryPrice ?? 0,
