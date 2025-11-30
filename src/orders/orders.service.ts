@@ -117,6 +117,7 @@ export class OrdersService {
         take: limit,
         select: {
           id: true,
+          orderNumber: true,
           total: true,
           deliveryPrice: true,
           deliveryType: true,
@@ -138,6 +139,7 @@ export class OrdersService {
     // Mapear los datos y calcular el total con deliveryPrice
     const ordersWithCalculatedTotal = orders.map((order) => ({
       id: order.id,
+      orderNumber: order.orderNumber,
       finalTotal: order.total + (order.deliveryType === 'SHIPPING' ? order.deliveryPrice : 0),
       deliveryType: order.deliveryType,
       status: order.status,
