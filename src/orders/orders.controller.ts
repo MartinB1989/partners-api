@@ -12,6 +12,7 @@ import {
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto';
 import { CartsService } from '../carts/carts.service';
+import { SendOrderConfirmationEmailUseCase } from '../email/use-cases/send-order-confirmation-email.use-case';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -23,11 +24,20 @@ export class OrdersController {
   constructor(
     private readonly ordersService: OrdersService,
     private readonly cartsService: CartsService,
+    private readonly sendOrderConfirmationEmailUseCase: SendOrderConfirmationEmailUseCase,
   ) {}
 
   @Post()
   async create(@Body() createOrderDto: CreateOrderDto, @Req() req: Request) {
     const order = await this.ordersService.create(createOrderDto);
+
+    // Enviar email de confirmación de compra
+    try {
+      await this.sendOrderConfirmationEmailUseCase.execute(order);
+    } catch (error) {
+      // No interrumpir el flujo si hay error al enviar el email
+      console.error('Error al enviar email de confirmación:', error);
+    }
 
     // Verificar si existe cookie de sesión de carrito
     const cookies = req.cookies as Record<string, string>;

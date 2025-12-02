@@ -11,6 +11,7 @@ import { CategoriesModule } from './categories/categories.module';
 import { CartsModule } from './carts/carts.module';
 import { PickupAddressesModule } from './pickup-addresses/pickup-addresses.module';
 import { OrdersModule } from './orders/orders.module';
+import { EmailModule } from './email/email.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { OrdersModule } from './orders/orders.module';
     CartsModule,
     PickupAddressesModule,
     OrdersModule,
+    EmailModule,
   ],
   controllers: [AppController],
   providers: [AppService],
