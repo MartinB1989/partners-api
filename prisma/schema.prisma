@@ -156,6 +156,7 @@ model Order {
   address        Address?     @relation(fields: [addressId], references: [id])
   user           User?        @relation(fields: [userId], references: [id])
   items          OrderItem[]
+  payment        Payment?
 
   @@index([userId])
   @@index([sessionId])
@@ -200,6 +201,38 @@ model PickupAddress {
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model Payment {
+  id                String        @id @default(uuid())
+  orderId           Int           @unique
+  paymentMethod     PaymentMethod
+  externalId        String?       // ID del pago en Mercado Pago
+  preferenceId      String?       // ID de la preferencia de Mercado Pago
+  status            PaymentStatus @default(PENDING)
+  amount            Float
+  currency          String        @default("ARS")
+  metadata          Json?         // Datos adicionales del pago
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  order             Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([externalId])
+  @@index([status])
+}
+
+enum PaymentMethod {
+  MERCADOPAGO
+  // Futuros métodos: STRIPE, TRANSFERENCIA, etc.
+}
+
+enum PaymentStatus {
+  PENDING           // Pago pendiente
+  APPROVED          // Pago aprobado
+  REJECTED          // Pago rechazado
+  CANCELLED         // Pago cancelado
+  REFUNDED          // Pago reembolsado
+  IN_PROCESS        // Pago en proceso (Mercado Pago)
 }
 
 enum DeliveryType {

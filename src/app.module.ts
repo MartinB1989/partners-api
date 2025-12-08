@@ -12,6 +12,7 @@ import { CartsModule } from './carts/carts.module';
 import { PickupAddressesModule } from './pickup-addresses/pickup-addresses.module';
 import { OrdersModule } from './orders/orders.module';
 import { EmailModule } from './email/email.module';
+import { PaymentsModule } from './payments/payments.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { EmailModule } from './email/email.module';
     PickupAddressesModule,
     OrdersModule,
     EmailModule,
+    PaymentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

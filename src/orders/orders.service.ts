@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrderDto } from './dto';
-import { Order, OrderStatus, Prisma } from '@prisma/client';
+import { Order, OrderStatus, Prisma, PaymentMethod, PaymentStatus } from '@prisma/client';
 import { generateOrderNumber } from './utils/generate-order-number';
 
 @Injectable()
@@ -98,6 +98,17 @@ export class OrdersService {
           });
         }
 
+        // Crear registro de Payment asociado a la orden
+        await tx.payment.create({
+          data: {
+            orderId: newOrder.id,
+            paymentMethod: PaymentMethod.MERCADOPAGO,
+            status: PaymentStatus.PENDING,
+            amount: newOrder.total,
+            currency: 'ARS',
+          },
+        });
+
         return newOrder;
       });
     } catch (error) {
@@ -163,6 +174,7 @@ export class OrdersService {
       include: {
         items: true,
         address: true,
+        payment: true,
       },
     });
 
@@ -171,5 +183,31 @@ export class OrdersService {
     }
 
     return order;
+  }
+
+  async updateOrderStatusByPayment(
+    orderId: number,
+    paymentStatus: PaymentStatus,
+  ): Promise<void> {
+    const orderStatus = this.mapPaymentStatusToOrderStatus(paymentStatus);
+
+    await this.prisma.order.update({
+      where: { id: orderId },
+      data: { status: orderStatus },
+    });
+  }
+
+  private mapPaymentStatusToOrderStatus(
+    paymentStatus: PaymentStatus,
+  ): OrderStatus {
+    switch (paymentStatus) {
+      case PaymentStatus.APPROVED:
+        return OrderStatus.PENDING;
+      case PaymentStatus.REJECTED:
+      case PaymentStatus.CANCELLED:
+        return OrderStatus.CANCELLED;
+      default:
+        return OrderStatus.PENDING_PAYMENT;
+    }
   }
 }
