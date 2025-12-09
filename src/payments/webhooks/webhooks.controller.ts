@@ -28,7 +28,9 @@ export class WebhooksController {
       const result =
         await this.webhooksService.handleMercadoPagoNotification(body);
 
-      this.logger.log(`Webhook processed successfully: ${JSON.stringify(result)}`);
+      this.logger.log(
+        `Webhook processed successfully: ${JSON.stringify(result)}`,
+      );
 
       return result;
     } catch (error) {
