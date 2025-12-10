@@ -5,7 +5,13 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrderDto } from './dto';
-import { Order, OrderStatus, Prisma, PaymentMethod, PaymentStatus } from '@prisma/client';
+import {
+  Order,
+  OrderStatus,
+  Prisma,
+  PaymentMethod,
+  PaymentStatus,
+} from '@prisma/client';
 import { generateOrderNumber } from './utils/generate-order-number';
 
 @Injectable()
@@ -151,7 +157,9 @@ export class OrdersService {
     const ordersWithCalculatedTotal = orders.map((order) => ({
       id: order.id,
       orderNumber: order.orderNumber,
-      finalTotal: order.total + (order.deliveryType === 'SHIPPING' ? order.deliveryPrice : 0),
+      finalTotal:
+        order.total +
+        (order.deliveryType === 'SHIPPING' ? order.deliveryPrice : 0),
       deliveryType: order.deliveryType,
       status: order.status,
       createdAt: order.createdAt,
@@ -195,6 +203,39 @@ export class OrdersService {
       where: { id: orderId },
       data: { status: orderStatus },
     });
+  }
+
+  async updateStatus(
+    id: number,
+    status: OrderStatus,
+    force: boolean = false,
+  ): Promise<{ status: OrderStatus }> {
+    // Verificar que la orden exista
+    const order = await this.prisma.order.findUnique({
+      where: { id },
+    });
+
+    if (!order) {
+      throw new NotFoundException(`Orden con ID ${id} no encontrada`);
+    }
+
+    // Validar que si la orden está en PENDING_PAYMENT, se requiera force = true
+    if (order.status === OrderStatus.PENDING_PAYMENT && !force) {
+      throw new BadRequestException(
+        'No se puede actualizar una orden que esta pendiente de pago.',
+      );
+    }
+
+    // Actualizar el status
+    const updatedOrder = await this.prisma.order.update({
+      where: { id },
+      data: { status },
+      select: {
+        status: true,
+      },
+    });
+
+    return { status: updatedOrder.status };
   }
 
   private mapPaymentStatusToOrderStatus(

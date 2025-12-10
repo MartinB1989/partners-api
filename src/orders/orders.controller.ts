@@ -8,9 +8,10 @@ import {
   Req,
   Query,
   UseGuards,
+  Patch,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
-import { CreateOrderDto } from './dto';
+import { CreateOrderDto, UpdateOrderStatusDto } from './dto';
 import { CartsService } from '../carts/carts.service';
 import { SendOrderConfirmationEmailUseCase } from '../email/use-cases/send-order-confirmation-email.use-case';
 import { PaymentsService } from '../payments/payments.service';
@@ -88,5 +89,19 @@ export class OrdersController {
   @Get(':id')
   async findById(@Param('id', ParseIntPipe) id: number) {
     return this.ordersService.findById(id);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @Patch(':id/status')
+  async updateStatus(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateOrderStatusDto: UpdateOrderStatusDto,
+  ) {
+    return await this.ordersService.updateStatus(
+      id,
+      updateOrderStatusDto.status,
+      updateOrderStatusDto.force ?? false,
+    );
   }
 }
