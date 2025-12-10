@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EmailService } from '../email.service';
 import { Order } from '@prisma/client';
+import { mapOrderStatusToSpanish } from '../../orders/utils/map-order-status';
 
 @Injectable()
 export class SendOrderConfirmationEmailUseCase {
@@ -22,7 +23,7 @@ export class SendOrderConfirmationEmailUseCase {
         deliveryPrice: order.deliveryPrice,
         itemsPriceSum: order.itemsPriceSum,
         deliveryType: order.deliveryType,
-        status: order.status,
+        status: mapOrderStatusToSpanish(order.status),
         createdAt: order.createdAt,
         itemsCount: order.items?.length || 0,
       };
