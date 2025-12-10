@@ -15,7 +15,6 @@ export class SendOrderConfirmationEmailUseCase {
   async execute(order: Order & { items?: any[] }): Promise<void> {
     try {
       const templateVariables = {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         orderNumber: order.orderNumber,
         customerName: order.name,
         email: order.email,
