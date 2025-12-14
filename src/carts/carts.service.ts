@@ -45,23 +45,6 @@ export class CartsService {
     return cart as unknown as CartWithRelations;
   }
 
-  // Método privado para calcular y actualizar el total del carrito
-  private async updateCartTotal(cartId: string): Promise<void> {
-    // Obtener todos los items del carrito con sus subtotales
-    const cartItems = await this.prisma.cartItem.findMany({
-      where: { cartId },
-    });
-
-    // Calcular el total sumando los subtotales
-    const total = cartItems.reduce((sum, item) => sum + item.subTotal, 0);
-
-    // Actualizar el total del carrito
-    await this.prisma.cart.update({
-      where: { id: cartId },
-      data: { total },
-    });
-  }
-
   // Encontrar un carrito para un usuario registrado
   async findOneByUserId(userId: string): Promise<CartWithRelations> {
     const cart = await this.prisma.cart.findFirst({
@@ -163,66 +146,79 @@ export class CartsService {
     // Calcular el subtotal
     const subTotal = product.price * addItemDto.quantity;
 
-    // Verificar si el producto ya está en el carrito
-    const existingItem = await this.prisma.cartItem.findUnique({
-      where: {
-        cartId_productId: {
-          cartId,
-          productId: addItemDto.productId,
-        },
-      },
-    });
-
-    let updatedItem;
-
-    if (existingItem) {
-      // Actualizar la cantidad y el subtotal
-      const newQuantity = existingItem.quantity + addItemDto.quantity;
-      const newSubTotal = product.price * newQuantity;
-
-      updatedItem = await this.prisma.cartItem.update({
+    // Usar transacción para añadir/actualizar el item y actualizar el total del carrito
+    return this.prisma.$transaction(async (tx) => {
+      // Verificar si el producto ya está en el carrito
+      const existingItem = await tx.cartItem.findUnique({
         where: {
-          id: existingItem.id,
-        },
-        data: {
-          quantity: newQuantity,
-          subTotal: newSubTotal,
-        },
-        include: {
-          product: {
-            include: {
-              images: true,
-            },
+          cartId_productId: {
+            cartId,
+            productId: addItemDto.productId,
           },
         },
       });
-    } else {
-      // Crear nuevo item en el carrito con el subtotal
-      updatedItem = await this.prisma.cartItem.create({
-        data: {
-          cart: {
-            connect: { id: cartId },
+
+      let updatedItem;
+
+      if (existingItem) {
+        // Actualizar la cantidad y el subtotal
+        const newQuantity = existingItem.quantity + addItemDto.quantity;
+        const newSubTotal = product.price * newQuantity;
+
+        updatedItem = await tx.cartItem.update({
+          where: {
+            id: existingItem.id,
           },
-          product: {
-            connect: { id: addItemDto.productId },
+          data: {
+            quantity: newQuantity,
+            subTotal: newSubTotal,
           },
-          quantity: addItemDto.quantity,
-          subTotal,
-        },
-        include: {
-          product: {
-            include: {
-              images: true,
+          include: {
+            product: {
+              include: {
+                images: true,
+              },
             },
           },
-        },
+        });
+      } else {
+        // Crear nuevo item en el carrito con el subtotal
+        updatedItem = await tx.cartItem.create({
+          data: {
+            cart: {
+              connect: { id: cartId },
+            },
+            product: {
+              connect: { id: addItemDto.productId },
+            },
+            quantity: addItemDto.quantity,
+            subTotal,
+          },
+          include: {
+            product: {
+              include: {
+                images: true,
+              },
+            },
+          },
+        });
+      }
+
+      // Calcular el nuevo total del carrito
+      const cartItems = await tx.cartItem.findMany({
+        where: { cartId },
       });
-    }
 
-    // Actualizar el total del carrito
-    await this.updateCartTotal(cartId);
+      const total = cartItems.reduce((sum, item) => sum + item.subTotal, 0);
 
-    return updatedItem as unknown as CartItemWithProduct;
+      // Actualizar el total del carrito
+      await tx.cart.update({
+        where: { id: cartId },
+        data: { total },
+      });
+
+      return updatedItem as unknown as CartItemWithProduct;
+    });
   }
 
   // Actualizar la cantidad de un producto en el carrito
@@ -265,27 +261,40 @@ export class CartsService {
     // Calcular el nuevo subtotal
     const subTotal = product.price * updateItemQuantityDto.quantity;
 
-    const updatedItem = await this.prisma.cartItem.update({
-      where: {
-        id: existingItem.id,
-      },
-      data: {
-        quantity: updateItemQuantityDto.quantity,
-        subTotal,
-      },
-      include: {
-        product: {
-          include: {
-            images: true,
+    // Usar transacción para actualizar el item y el total del carrito
+    return this.prisma.$transaction(async (tx) => {
+      const updatedItem = await tx.cartItem.update({
+        where: {
+          id: existingItem.id,
+        },
+        data: {
+          quantity: updateItemQuantityDto.quantity,
+          subTotal,
+        },
+        include: {
+          product: {
+            include: {
+              images: true,
+            },
           },
         },
-      },
+      });
+
+      // Calcular el nuevo total del carrito
+      const cartItems = await tx.cartItem.findMany({
+        where: { cartId },
+      });
+
+      const total = cartItems.reduce((sum, item) => sum + item.subTotal, 0);
+
+      // Actualizar el total del carrito
+      await tx.cart.update({
+        where: { id: cartId },
+        data: { total },
+      });
+
+      return updatedItem as unknown as CartItemWithProduct;
     });
-
-    // Actualizar el total del carrito
-    await this.updateCartTotal(cartId);
-
-    return updatedItem as unknown as CartItemWithProduct;
   }
 
   // Eliminar un producto del carrito
@@ -306,34 +315,47 @@ export class CartsService {
       );
     }
 
-    // Eliminar el item
-    await this.prisma.cartItem.delete({
-      where: {
-        id: existingItem.id,
-      },
-    });
+    // Usar transacción para eliminar el item y actualizar el total
+    return this.prisma.$transaction(async (tx) => {
+      // Eliminar el item
+      await tx.cartItem.delete({
+        where: {
+          id: existingItem.id,
+        },
+      });
 
-    // Actualizar el total del carrito
-    await this.updateCartTotal(cartId);
+      // Calcular el nuevo total del carrito
+      const cartItems = await tx.cartItem.findMany({
+        where: { cartId },
+      });
 
-    // Obtener el carrito actualizado para devolver
-    const updatedCart = await this.prisma.cart.findUnique({
-      where: { id: cartId },
-      include: {
-        items: {
-          include: {
-            product: {
-              include: {
-                images: true,
+      const total = cartItems.reduce((sum, item) => sum + item.subTotal, 0);
+
+      // Actualizar el total del carrito
+      await tx.cart.update({
+        where: { id: cartId },
+        data: { total },
+      });
+
+      // Obtener el carrito actualizado para devolver
+      const updatedCart = await tx.cart.findUnique({
+        where: { id: cartId },
+        include: {
+          items: {
+            include: {
+              product: {
+                include: {
+                  images: true,
+                },
               },
             },
           },
+          address: true,
         },
-        address: true,
-      },
-    });
+      });
 
-    return updatedCart;
+      return updatedCart;
+    });
   }
 
   // Actualizar el carrito (dirección, tipo de entrega)
@@ -385,37 +407,40 @@ export class CartsService {
       throw new NotFoundException(`Carrito con ID ${id} no encontrado`);
     }
 
-    // Eliminar todos los items
-    await this.prisma.cartItem.deleteMany({
-      where: {
-        cartId: id,
-      },
-    });
+    // Usar transacción para eliminar items y actualizar el total
+    return this.prisma.$transaction(async (tx) => {
+      // Eliminar todos los items
+      await tx.cartItem.deleteMany({
+        where: {
+          cartId: id,
+        },
+      });
 
-    // Actualizar el total del carrito a 0
-    await this.prisma.cart.update({
-      where: { id },
-      data: { total: 0 },
-    });
+      // Actualizar el total del carrito a 0
+      await tx.cart.update({
+        where: { id },
+        data: { total: 0 },
+      });
 
-    // Obtener el carrito actualizado para devolver
-    const updatedCart = await this.prisma.cart.findUnique({
-      where: { id },
-      include: {
-        items: {
-          include: {
-            product: {
-              include: {
-                images: true,
+      // Obtener el carrito actualizado para devolver
+      const updatedCart = await tx.cart.findUnique({
+        where: { id },
+        include: {
+          items: {
+            include: {
+              product: {
+                include: {
+                  images: true,
+                },
               },
             },
           },
+          address: true,
         },
-        address: true,
-      },
-    });
+      });
 
-    return updatedCart as unknown as CartWithRelations;
+      return updatedCart as unknown as CartWithRelations;
+    });
   }
 
   // Transferir un carrito anónimo a un usuario registrado
@@ -477,83 +502,96 @@ export class CartsService {
     }
 
     // Si el usuario ya tiene carrito, transferir los items del carrito anónimo al carrito del usuario
-    for (const item of anonymousCart.items) {
-      // Verificar si el item ya existe en el carrito del usuario
-      const existingItem = await this.prisma.cartItem.findUnique({
-        where: {
-          cartId_productId: {
-            cartId: userCart.id,
-            productId: item.productId,
+    // Usar transacción para garantizar atomicidad
+    return this.prisma.$transaction(async (tx) => {
+      for (const item of anonymousCart.items) {
+        // Verificar si el item ya existe en el carrito del usuario
+        const existingItem = await tx.cartItem.findUnique({
+          where: {
+            cartId_productId: {
+              cartId: userCart.id,
+              productId: item.productId,
+            },
           },
+        });
+
+        // Obtener el producto para calcular el subtotal
+        const product = await tx.product.findUnique({
+          where: { id: item.productId },
+        });
+
+        if (!product) {
+          continue; // Saltar si el producto no existe
+        }
+
+        if (existingItem) {
+          // Actualizar la cantidad y el subtotal del item existente
+          const newQuantity = existingItem.quantity + item.quantity;
+          const newSubTotal = product.price * newQuantity;
+
+          await tx.cartItem.update({
+            where: {
+              id: existingItem.id,
+            },
+            data: {
+              quantity: newQuantity,
+              subTotal: newSubTotal,
+            },
+          });
+        } else {
+          // Crear un nuevo item en el carrito del usuario
+          await tx.cartItem.create({
+            data: {
+              cartId: userCart.id,
+              productId: item.productId,
+              quantity: item.quantity,
+              subTotal: item.subTotal,
+            },
+          });
+        }
+      }
+
+      // Calcular el total del carrito dentro de la transacción
+      const cartItems = await tx.cartItem.findMany({
+        where: { cartId: userCart.id },
+      });
+
+      const total = cartItems.reduce((sum, item) => sum + item.subTotal, 0);
+
+      // Actualizar el total del carrito
+      await tx.cart.update({
+        where: { id: userCart.id },
+        data: { total },
+      });
+
+      // Eliminar el carrito anónimo
+      await tx.cart.delete({
+        where: {
+          id: anonymousCart.id,
         },
       });
 
-      // Obtener el producto para calcular el subtotal
-      const product = await this.prisma.product.findUnique({
-        where: { id: item.productId },
-      });
-
-      if (!product) {
-        continue; // Saltar si el producto no existe
-      }
-
-      if (existingItem) {
-        // Actualizar la cantidad y el subtotal del item existente
-        const newQuantity = existingItem.quantity + item.quantity;
-        const newSubTotal = product.price * newQuantity;
-
-        await this.prisma.cartItem.update({
-          where: {
-            id: existingItem.id,
-          },
-          data: {
-            quantity: newQuantity,
-            subTotal: newSubTotal,
-          },
-        });
-      } else {
-        // Crear un nuevo item en el carrito del usuario
-        await this.prisma.cartItem.create({
-          data: {
-            cartId: userCart.id,
-            productId: item.productId,
-            quantity: item.quantity,
-            subTotal: item.subTotal,
-          },
-        });
-      }
-    }
-
-    // Actualizar el total del carrito del usuario
-    await this.updateCartTotal(userCart.id);
-
-    // Eliminar el carrito anónimo
-    await this.prisma.cart.delete({
-      where: {
-        id: anonymousCart.id,
-      },
-    });
-
-    // Devolver el carrito actualizado del usuario
-    const updatedUserCart = await this.prisma.cart.findUnique({
-      where: {
-        id: userCart.id,
-      },
-      include: {
-        items: {
-          include: {
-            product: {
-              include: {
-                images: true,
+      // Devolver el carrito actualizado del usuario
+      const updatedUserCart = await tx.cart.findUnique({
+        where: {
+          id: userCart.id,
+        },
+        include: {
+          items: {
+            include: {
+              product: {
+                include: {
+                  images: true,
+                },
               },
             },
           },
+          address: true,
         },
-        address: true,
-      },
-    });
+      });
 
-    return updatedUserCart as unknown as CartWithRelations;
+      return updatedUserCart as unknown as CartWithRelations;
+    });
   }
 
   // Crear una dirección

@@ -480,25 +480,28 @@ export class ProductsService {
       );
     }
 
-    // Eliminar la imagen de la base de datos
-    await this.prisma.productImage.delete({ where: { id: imageId } });
+    // Usar transacción para eliminar la imagen y actualizar la imagen principal si es necesario
+    await this.prisma.$transaction(async (tx) => {
+      // Eliminar la imagen de la base de datos
+      await tx.productImage.delete({ where: { id: imageId } });
 
-    // Si la imagen era principal, asignar otra imagen como principal
-    if (image.main) {
-      const nextImage = await this.prisma.productImage.findFirst({
-        where: { productId },
-        orderBy: { order: 'asc' },
-      });
-
-      if (nextImage) {
-        await this.prisma.productImage.update({
-          where: { id: nextImage.id },
-          data: { main: true },
+      // Si la imagen era principal, asignar otra imagen como principal
+      if (image.main) {
+        const nextImage = await tx.productImage.findFirst({
+          where: { productId },
+          orderBy: { order: 'asc' },
         });
-      }
-    }
 
-    // Intentar eliminar la imagen de S3
+        if (nextImage) {
+          await tx.productImage.update({
+            where: { id: nextImage.id },
+            data: { main: true },
+          });
+        }
+      }
+    });
+
+    // Intentar eliminar la imagen de S3 (operación externa, fuera de la transacción)
     try {
       const command = new DeleteObjectCommand({
         Bucket: this.awsService['bucket'],
@@ -545,16 +548,19 @@ export class ProductsService {
       );
     }
 
-    // Actualizar todas las imágenes del producto para quitar la marca de principal
-    await this.prisma.productImage.updateMany({
-      where: { productId },
-      data: { main: false },
-    });
+    // Usar transacción para garantizar que ambas operaciones sean atómicas
+    await this.prisma.$transaction(async (tx) => {
+      // Actualizar todas las imágenes del producto para quitar la marca de principal
+      await tx.productImage.updateMany({
+        where: { productId },
+        data: { main: false },
+      });
 
-    // Marcar la imagen seleccionada como principal
-    await this.prisma.productImage.update({
-      where: { id: imageId },
-      data: { main: true },
+      // Marcar la imagen seleccionada como principal
+      await tx.productImage.update({
+        where: { id: imageId },
+        data: { main: true },
+      });
     });
 
     return { success: true, message: 'Imagen principal actualizada' };

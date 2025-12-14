@@ -37,7 +37,8 @@ export class WebhooksService {
 
       const externalReference = paymentInfo.external_reference;
       const mpStatus = paymentInfo.status;
-      const paymentStatus = PAYMENT_STATUS_MAP[mpStatus] || PaymentStatus.PENDING;
+      const paymentStatus =
+        PAYMENT_STATUS_MAP[mpStatus] || PaymentStatus.PENDING;
 
       if (!externalReference) {
         this.logger.warn('No external_reference found in payment info');
