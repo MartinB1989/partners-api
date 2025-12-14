@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrderDto } from './dto';
@@ -13,10 +14,16 @@ import {
   PaymentStatus,
 } from '@prisma/client';
 import { generateOrderNumber } from './utils/generate-order-number';
+import { SendOrderStatusUpdateEmailUseCase } from '../email/use-cases/send-order-status-update-email.use-case';
 
 @Injectable()
 export class OrdersService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(OrdersService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private sendOrderStatusUpdateEmailUseCase: SendOrderStatusUpdateEmailUseCase,
+  ) {}
 
   async create(createOrderDto: CreateOrderDto): Promise<Order> {
     const {
@@ -230,10 +237,16 @@ export class OrdersService {
     const updatedOrder = await this.prisma.order.update({
       where: { id },
       data: { status },
-      select: {
-        status: true,
-      },
     });
+
+    // Enviar email de notificación de cambio de estado (non-blocking)
+    this.sendOrderStatusUpdateEmailUseCase
+      .execute(updatedOrder)
+      .catch((error) => {
+        this.logger.error(
+          `Failed to send status update email for order ${id}: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      });
 
     return { status: updatedOrder.status };
   }

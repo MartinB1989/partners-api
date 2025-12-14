@@ -69,6 +69,20 @@ export class EmailService {
   }
 
   /**
+   * Envía email de actualización de estado de orden
+   */
+  async sendOrderStatusUpdateEmail(
+    email: string,
+    templateVariables: Record<string, any>,
+  ): Promise<void> {
+    await this.sendTemplateEmail({
+      to: [{ email }],
+      templateKey: 'ORDER_STATUS_UPDATE',
+      templateVariables,
+    });
+  }
+
+  /**
    * Envía emails en lotes
    * Implementa el patrón de Mailtrap batchSend para mejor performance
    */
@@ -119,17 +133,24 @@ export class EmailService {
             })),
           };
 
-          const response = await this.mailtrapService.sendBatch(batchRequest);
+          const response = (await this.mailtrapService.sendBatch(
+            batchRequest,
+          )) as {
+            success?: boolean;
+            responses?: Array<{ success?: boolean }>;
+          };
 
           // Procesar respuestas individuales
-          if (response.success && response.responses) {
-            response.responses.forEach((batchResponse) => {
-              if (batchResponse.success) {
-                totalSent++;
-              } else {
-                totalFailed++;
-              }
-            });
+          if (response?.success && Array.isArray(response.responses)) {
+            response.responses.forEach(
+              (batchResponse: { success?: boolean }) => {
+                if (batchResponse.success) {
+                  totalSent++;
+                } else {
+                  totalFailed++;
+                }
+              },
+            );
           } else {
             totalFailed += batch.length;
           }

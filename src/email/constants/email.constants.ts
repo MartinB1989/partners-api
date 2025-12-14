@@ -1,7 +1,12 @@
 export const EMAIL_TEMPLATES = {
   ORDER_CONFIRMATION: {
-    uuid: '4b5c05e9-8630-4741-87aa-8704a3df41aa', // Se agregará cuando el template esté disponible en Mailtrap
+    uuid: '4b5c05e9-8630-4741-87aa-8704a3df41aa',
     name: 'ORDER_CONFIRMATION',
+    maxRetries: 3,
+  },
+  ORDER_STATUS_UPDATE: {
+    uuid: 'bfb31f2f-5d10-4df2-856f-1a98d69b5e2c',
+    name: 'ORDER_STATUS_UPDATE',
     maxRetries: 3,
   },
 };
