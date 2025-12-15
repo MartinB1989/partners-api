@@ -120,7 +120,6 @@ Cuando se envía un email de confirmación de compra, están disponibles las sig
   email: string;            // Email del cliente
   total: number;            // Total de la orden
   deliveryPrice: number;    // Costo de envío
-  itemsPriceSum: number;    // Suma de precios de items
   deliveryType: string;     // SHIPPING o PICKUP
   status: string;           // Estado de la orden
   createdAt: Date;          // Fecha de creación

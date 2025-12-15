@@ -20,7 +20,6 @@ export class SendOrderConfirmationEmailUseCase {
         email: order.email,
         total: order.total,
         deliveryPrice: order.deliveryPrice,
-        itemsPriceSum: order.itemsPriceSum,
         deliveryType: order.deliveryType,
         status: mapOrderStatusToSpanish(order.status),
         createdAt: order.createdAt,

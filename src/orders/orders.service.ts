@@ -31,7 +31,6 @@ export class OrdersService {
       address,
       total,
       deliveryPrice,
-      itemsPriceSum,
       ...orderData
     } = createOrderDto;
 
@@ -80,7 +79,6 @@ export class OrdersService {
             addressId,
             total,
             deliveryPrice: deliveryPrice ?? 0,
-            itemsPriceSum: itemsPriceSum ?? 0,
             status: OrderStatus.PENDING_PAYMENT,
             items: {
               create: items.map((item) => ({

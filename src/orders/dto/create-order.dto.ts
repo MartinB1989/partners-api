@@ -84,10 +84,6 @@ export class CreateOrderDto {
   @IsOptional()
   deliveryPrice?: number;
 
-  @IsNumber()
-  @IsOptional()
-  itemsPriceSum?: number;
-
   @IsEnum(DeliveryType)
   @IsNotEmpty()
   deliveryType: DeliveryType;
