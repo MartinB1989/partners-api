@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
-import { Order, OrderItem } from '@prisma/client';
+import { Order, OrderItem, DeliveryType } from '@prisma/client';
 import { MERCADOPAGO_CONFIG } from './mercadopago.constants';
 import * as crypto from 'crypto';
 
@@ -35,18 +35,29 @@ export class MercadoPagoService {
     try {
       const frontendUrl = this.configService.get<string>('FRONTEND_URL');
       const backendUrl = this.configService.get<string>('BACKEND_URL');
-      console.log('frontendUrl', frontendUrl);
-      console.log('backendUrl', backendUrl);
+
+      // Construir los items desde los OrderItems
+      const items = order.items.map((item) => ({
+        id: `${order.orderNumber}#${item.id}`,
+        title: item.title,
+        quantity: item.quantity,
+        unit_price: Number(item.unitPrice),
+        currency_id: MERCADOPAGO_CONFIG.CURRENCY,
+      }));
+
+      // Si el deliveryType es SHIPPING, agregar el costo de envío como un item adicional
+      if (order.deliveryType === DeliveryType.SHIPPING && order.deliveryPrice) {
+        items.push({
+          id: `SHIP#${order.orderNumber}`,
+          title: 'Costo de envío',
+          quantity: 1,
+          unit_price: Number(order.deliveryPrice),
+          currency_id: MERCADOPAGO_CONFIG.CURRENCY,
+        });
+      }
+
       const preferenceData = {
-        items: [
-          {
-            id: order.orderNumber,
-            title: `Orden #${order.orderNumber}`,
-            quantity: 1,
-            unit_price: Number(order.total),
-            currency_id: MERCADOPAGO_CONFIG.CURRENCY,
-          },
-        ],
+        items,
         payer: {
           name: order.name,
           email: order.email,
