@@ -8,21 +8,28 @@ import { CurrentUser } from './decorators/current-user.decorator';
 import { User } from '@prisma/client';
 import { AdminLoginDto } from './dto/admin-login.dto';
 import { AdminProducerGuard } from './guards/admin-producer.guard';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  // Registro: máximo 5 por hora por IP
+  @Throttle({ long: { ttl: 3600000, limit: 5 } })
   @Post('register')
   register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
   }
 
+  // Login: máximo 5 intentos por minuto
+  @Throttle({ short: { ttl: 60000, limit: 5 } })
   @Post('login')
   login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
   }
 
+  // Admin login: máximo 3 intentos por 5 minutos
+  @Throttle({ long: { ttl: 300000, limit: 3 } })
   @UseGuards(AdminProducerGuard)
   @Post('admin/login')
   adminLogin(@Body() adminLoginDto: AdminLoginDto) {

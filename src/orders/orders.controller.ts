@@ -20,6 +20,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '@prisma/client';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('orders')
 export class OrdersController {
@@ -30,6 +31,8 @@ export class OrdersController {
     private readonly sendOrderConfirmationEmailUseCase: SendOrderConfirmationEmailUseCase,
   ) {}
 
+  // Creación de órdenes: máximo 10 por 5 minutos
+  @Throttle({ long: { ttl: 300000, limit: 10 } })
   @Post()
   async create(@Body() createOrderDto: CreateOrderDto, @Req() req: Request) {
     // NOTA: El email de confirmación se envía SOLO cuando el pago sea APPROVED (en el webhook de Mercado Pago)

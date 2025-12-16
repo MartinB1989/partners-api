@@ -2,6 +2,7 @@ import { Controller, Post, Body, Headers, Logger } from '@nestjs/common';
 import { WebhooksService } from './webhooks.service';
 import { MercadoPagoService } from '../mercadopago/mercadopago.service';
 import { Public } from '../../auth/decorators/public.decorator';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('webhooks')
 export class WebhooksController {
@@ -12,6 +13,8 @@ export class WebhooksController {
     private readonly mercadoPagoService: MercadoPagoService,
   ) {}
 
+  // Webhooks: máximo 1000 por minuto (permitir alto volumen legítimo)
+  @Throttle({ long: { ttl: 60000, limit: 1000 } })
   @Post('mercadopago')
   @Public()
   async handleMercadoPagoWebhook(

@@ -13,6 +13,8 @@ import { PickupAddressesModule } from './pickup-addresses/pickup-addresses.modul
 import { OrdersModule } from './orders/orders.module';
 import { EmailModule } from './email/email.module';
 import { PaymentsModule } from './payments/payments.module';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -20,6 +22,23 @@ import { PaymentsModule } from './payments/payments.module';
       isGlobal: true, // Hace que el ConfigModule esté disponible en toda la aplicación
       envFilePath: '.env', // Ruta al archivo .env
     }),
+    ThrottlerModule.forRoot([
+      {
+        name: 'short',
+        ttl: 1000, // 1 segundo
+        limit: 3, // 3 peticiones por segundo
+      },
+      {
+        name: 'medium',
+        ttl: 10000, // 10 segundos
+        limit: 20, // 20 peticiones por 10 segundos
+      },
+      {
+        name: 'long',
+        ttl: 60000, // 1 minuto
+        limit: 100, // 100 peticiones por minuto
+      },
+    ]),
     PrismaModule,
     UsersModule,
     AuthModule,
@@ -33,6 +52,12 @@ import { PaymentsModule } from './payments/payments.module';
     PaymentsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard, // Rate limiting global
+    },
+  ],
 })
 export class AppModule {}

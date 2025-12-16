@@ -18,6 +18,7 @@ import { GeneratePresignedUrlDto } from './dto/generate-presigned-url.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { User } from '@prisma/client';
 import { Request } from 'express';
+import { Throttle } from '@nestjs/throttler';
 
 export interface RequestWithUser extends Request {
   user: User;
@@ -36,6 +37,8 @@ export class ProductsController {
     return this.productsService.create(createProductDto, req.user.id);
   }
 
+  // Listado de productos: máximo 100 por minuto (prevenir scraping)
+  @Throttle({ long: { ttl: 60000, limit: 100 } })
   @Get()
   findAll(@Query('page') page: string, @Query('limit') limit: string) {
     return this.productsService.findAll(
