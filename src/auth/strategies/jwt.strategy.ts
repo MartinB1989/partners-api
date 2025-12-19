@@ -1,16 +1,28 @@
 // src/auth/strategies/jwt.strategy.ts
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(private prisma: PrismaService) {
+  constructor(
+    private prisma: PrismaService,
+    private config: ConfigService,
+  ) {
+    const jwtSecret = config.get<string>('JWT_SECRET');
+
+    if (!jwtSecret) {
+      throw new Error(
+        'JWT_SECRET must be defined in environment variables. Application cannot start without it.',
+      );
+    }
+
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: process.env.JWT_SECRET || 'secret_hardcoded_para_desarrollo',
+      secretOrKey: jwtSecret,
     });
   }
 

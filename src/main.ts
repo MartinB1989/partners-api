@@ -6,6 +6,30 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
+  // Validar variables de entorno críticas al inicio
+  const requiredEnvVars = [
+    'JWT_SECRET',
+    'DATABASE_URL',
+    'AWS_S3_ACCESS_KEY_ID',
+    'AWS_S3_SECRET_ACCESS_KEY',
+    'AWS_REGION',
+    'AWS_S3_BUCKET',
+    'MERCADOPAGO_ACCESS_TOKEN',
+    'MERCADOPAGO_WEBHOOK_SECRET',
+    'MAILTRAP_TOKEN',
+    'MAILTRAP_SENDER_EMAIL',
+  ];
+
+  const missing = requiredEnvVars.filter((v) => !process.env[v]);
+
+  if (missing.length > 0) {
+    throw new Error(
+      `Missing required environment variables: ${missing.join(', ')}. ` +
+        `Application cannot start without these variables. ` +
+        `Please check your .env file and ensure all required variables are set.`,
+    );
+  }
+
   const app = await NestFactory.create(AppModule);
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   app.use(cookieParser());
