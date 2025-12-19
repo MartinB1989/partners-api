@@ -3,6 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
   Logger,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrderDto } from './dto';
@@ -232,14 +233,43 @@ export class OrdersService {
     id: number,
     status: OrderStatus,
     force: boolean = false,
+    user: User,
   ): Promise<{ status: OrderStatus }> {
-    // Verificar que la orden exista
+    // Verificar que la orden exista e incluir items con producto
     const order = await this.prisma.order.findUnique({
       where: { id },
+      include: {
+        items: {
+          include: {
+            product: {
+              select: {
+                userId: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!order) {
       throw new NotFoundException(`Orden con ID ${id} no encontrada`);
+    }
+
+    // Verificar autorización: Solo ADMIN o PRODUCTOR dueño de los productos
+    const isAdmin = user.roles.includes(Role.ADMIN);
+    const isProductor = user.roles.includes(Role.PRODUCTOR);
+
+    if (!isAdmin && isProductor) {
+      // Verificar que todos los productos de la orden pertenezcan al productor
+      const allProductsBelongToProducer = order.items.every(
+        (item) => item.product.userId === user.id,
+      );
+
+      if (!allProductsBelongToProducer) {
+        throw new ForbiddenException(
+          'No tienes permiso para actualizar esta orden. Solo puedes actualizar órdenes que contengan tus productos.',
+        );
+      }
     }
 
     // Validar que si la orden está en PENDING_PAYMENT, se requiera force = true

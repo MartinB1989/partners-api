@@ -101,16 +101,18 @@ export class OrdersController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.PRODUCTOR)
   @Patch(':id/status')
   async updateStatus(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateOrderStatusDto: UpdateOrderStatusDto,
+    @CurrentUser() user: User,
   ) {
     return await this.ordersService.updateStatus(
       id,
       updateOrderStatusDto.status,
       updateOrderStatusDto.force ?? false,
+      user,
     );
   }
 }
