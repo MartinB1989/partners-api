@@ -19,7 +19,8 @@ import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { Role } from '@prisma/client';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { Role, User } from '@prisma/client';
 import { Throttle } from '@nestjs/throttler';
 
 @Controller('orders')
@@ -80,12 +81,17 @@ export class OrdersController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.PRODUCTOR)
   @Get()
-  async findAll(@Query('page') page: string, @Query('limit') limit: string) {
+  async findAll(
+    @Query('page') page: string,
+    @Query('limit') limit: string,
+    @CurrentUser() user: User,
+  ) {
     return await this.ordersService.findAll(
       page ? parseInt(page) : 1,
       limit ? parseInt(limit) : 10,
+      user,
     );
   }
 

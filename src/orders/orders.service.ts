@@ -12,6 +12,8 @@ import {
   Prisma,
   PaymentMethod,
   PaymentStatus,
+  Role,
+  User,
 } from '@prisma/client';
 import { generateOrderNumber } from './utils/generate-order-number';
 import { SendOrderStatusUpdateEmailUseCase } from '../email/use-cases/send-order-status-update-email.use-case';
@@ -130,11 +132,27 @@ export class OrdersService {
     }
   }
 
-  async findAll(page = 1, limit = 10) {
+  async findAll(page = 1, limit = 10, user: User) {
     const skip = (page - 1) * limit;
+
+    // Determinar el filtro según el rol del usuario
+    const whereClause: Prisma.OrderWhereInput = {};
+
+    if (user.roles.includes(Role.PRODUCTOR) && !user.roles.includes(Role.ADMIN)) {
+      // Si es PRODUCTOR (y no ADMIN), filtrar por órdenes con sus productos
+      whereClause.items = {
+        some: {
+          product: {
+            userId: user.id,
+          },
+        },
+      };
+    }
+    // Si es ADMIN, no se agrega filtro (verá todas las órdenes)
 
     const [orders, total] = await Promise.all([
       this.prisma.order.findMany({
+        where: whereClause,
         skip,
         take: limit,
         select: {
@@ -155,7 +173,7 @@ export class OrdersService {
           createdAt: 'desc',
         },
       }),
-      this.prisma.order.count(),
+      this.prisma.order.count({ where: whereClause }),
     ]);
 
     // Mapear los datos y calcular el total con deliveryPrice
