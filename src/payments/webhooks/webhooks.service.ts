@@ -3,7 +3,7 @@ import { PaymentsService } from '../payments.service';
 import { MercadoPagoService } from '../mercadopago/mercadopago.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PAYMENT_STATUS_MAP } from '../mercadopago/mercadopago.constants';
-import { PaymentStatus } from '@prisma/client';
+import { PaymentStatus, OrderStatus } from '@prisma/client';
 import { SendOrderConfirmationEmailUseCase } from '../../email/use-cases/send-order-confirmation-email.use-case';
 
 @Injectable()
@@ -43,6 +43,31 @@ export class WebhooksService {
       if (!externalReference) {
         this.logger.warn('No external_reference found in payment info');
         return { success: false, message: 'No external reference' };
+      }
+
+      // Check current order status before processing
+      const existingOrder = await this.prisma.order.findUnique({
+        where: { orderNumber: externalReference },
+        select: { id: true, status: true, orderNumber: true },
+      });
+
+      if (!existingOrder) {
+        this.logger.warn(
+          `Order not found for external reference: ${externalReference}`,
+        );
+        return { success: false, message: 'Order not found' };
+      }
+
+      // If order status is different from PENDING_PAYMENT, it's already been processed
+      if (existingOrder.status !== OrderStatus.PENDING_PAYMENT) {
+        this.logger.log(
+          `Order ${existingOrder.orderNumber} already processed with status ${existingOrder.status}. Skipping webhook processing.`,
+        );
+        return {
+          success: true,
+          message: 'Order already processed',
+          alreadyProcessed: true,
+        };
       }
 
       const payment = await this.paymentsService.updatePaymentByOrderNumber(
