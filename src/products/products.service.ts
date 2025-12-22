@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -10,6 +11,7 @@ import { CreateProductImageDto } from './dto/create-product-image.dto';
 import { GeneratePresignedUrlDto } from './dto/generate-presigned-url.dto';
 import { AwsService } from '../aws/aws.service';
 import { DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { Role } from '@prisma/client';
 
 @Injectable()
 export class ProductsService {
@@ -17,6 +19,45 @@ export class ProductsService {
     private prisma: PrismaService,
     private readonly awsService: AwsService,
   ) {}
+
+  /**
+   * Verifica si el usuario tiene permisos para modificar un producto
+   * Permite acceso a: ADMIN o dueño del producto (PRODUCTOR)
+   */
+  private async verifyProductOwnership(
+    productId: number,
+    userId: string,
+  ): Promise<void> {
+    // Obtener el producto y el usuario
+    const [product, user] = await Promise.all([
+      this.prisma.product.findUnique({
+        where: { id: productId },
+        select: { userId: true },
+      }),
+      this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { roles: true },
+      }),
+    ]);
+
+    if (!product) {
+      throw new NotFoundException(`Producto con ID ${productId} no encontrado`);
+    }
+
+    if (!user) {
+      throw new ForbiddenException('Usuario no encontrado');
+    }
+
+    // Permitir acceso si es ADMIN o si es el dueño del producto
+    const isAdmin = user.roles.includes(Role.ADMIN);
+    const isOwner = product.userId === userId;
+
+    if (!isAdmin && !isOwner) {
+      throw new ForbiddenException(
+        'No tienes permiso para realizar esta acción en este producto',
+      );
+    }
+  }
 
   async create(createProductDto: CreateProductDto, userId: string) {
     const { categoryIds, size, ...productData } = createProductDto;
@@ -91,6 +132,9 @@ export class ProductsService {
 
     const [products, total] = await Promise.all([
       this.prisma.product.findMany({
+        where: {
+          active: true,
+        },
         skip,
         take: limit,
         include: {
@@ -113,7 +157,11 @@ export class ProductsService {
           },
         },
       }),
-      this.prisma.product.count(),
+      this.prisma.product.count({
+        where: {
+          active: true,
+        },
+      }),
     ]);
 
     return {
@@ -252,21 +300,8 @@ export class ProductsService {
   }
 
   async update(id: number, updateProductDto: UpdateProductDto, userId: string) {
-    // Verificar si el producto existe y pertenece al usuario
-    const product = await this.prisma.product.findUnique({
-      where: { id },
-      select: { userId: true },
-    });
-
-    if (!product) {
-      throw new NotFoundException(`Producto con ID ${id} no encontrado`);
-    }
-
-    if (product.userId !== userId) {
-      throw new BadRequestException(
-        'No tienes permiso para actualizar este producto',
-      );
-    }
+    // Verificar permisos (ADMIN o dueño del producto)
+    await this.verifyProductOwnership(id, userId);
 
     const { categoryIds, size, ...productData } = updateProductDto;
 
@@ -340,7 +375,10 @@ export class ProductsService {
   }
 
   async remove(id: number, userId: string) {
-    // Verificar si el producto existe y pertenece al usuario
+    // Verificar permisos (ADMIN o dueño del producto)
+    await this.verifyProductOwnership(id, userId);
+
+    // Obtener el producto con sus imágenes
     const product = await this.prisma.product.findUnique({
       where: { id },
       include: {
@@ -350,12 +388,6 @@ export class ProductsService {
 
     if (!product) {
       throw new NotFoundException(`Producto con ID ${id} no encontrado`);
-    }
-
-    if (product.userId !== userId) {
-      throw new BadRequestException(
-        'No tienes permiso para eliminar este producto',
-      );
     }
 
     // Implementar transacción para eliminar el producto y sus imágenes
@@ -406,21 +438,8 @@ export class ProductsService {
     imageDto: CreateProductImageDto,
     userId: string,
   ) {
-    // Verificar si el producto existe y pertenece al usuario
-    const product = await this.prisma.product.findUnique({
-      where: { id: productId },
-      select: { userId: true },
-    });
-
-    if (!product) {
-      throw new NotFoundException(`Producto con ID ${productId} no encontrado`);
-    }
-
-    if (product.userId !== userId) {
-      throw new BadRequestException(
-        'No tienes permiso para añadir imágenes a este producto',
-      );
-    }
+    // Verificar permisos (ADMIN o dueño del producto)
+    await this.verifyProductOwnership(productId, userId);
 
     // Verificar si ya existe una imagen marcada como principal
     const existingMainImage = await this.prisma.productImage.findFirst({
@@ -448,21 +467,8 @@ export class ProductsService {
   }
 
   async removeProductImage(productId: number, imageId: string, userId: string) {
-    // Verificar si el producto existe y pertenece al usuario
-    const product = await this.prisma.product.findUnique({
-      where: { id: productId },
-      select: { userId: true },
-    });
-
-    if (!product) {
-      throw new NotFoundException(`Producto con ID ${productId} no encontrado`);
-    }
-
-    if (product.userId !== userId) {
-      throw new BadRequestException(
-        'No tienes permiso para eliminar imágenes de este producto',
-      );
-    }
+    // Verificar permisos (ADMIN o dueño del producto)
+    await this.verifyProductOwnership(productId, userId);
 
     // Verificar si la imagen existe
     const image = await this.prisma.productImage.findUnique({
@@ -516,21 +522,8 @@ export class ProductsService {
   }
 
   async setMainImage(productId: number, imageId: string, userId: string) {
-    // Verificar si el producto existe y pertenece al usuario
-    const product = await this.prisma.product.findUnique({
-      where: { id: productId },
-      select: { userId: true },
-    });
-
-    if (!product) {
-      throw new NotFoundException(`Producto con ID ${productId} no encontrado`);
-    }
-
-    if (product.userId !== userId) {
-      throw new BadRequestException(
-        'No tienes permiso para modificar imágenes de este producto',
-      );
-    }
+    // Verificar permisos (ADMIN o dueño del producto)
+    await this.verifyProductOwnership(productId, userId);
 
     // Verificar si la imagen existe
     const image = await this.prisma.productImage.findUnique({
@@ -578,21 +571,8 @@ export class ProductsService {
     imageId: string,
     userId: string,
   ) {
-    // Verificar si el producto existe y pertenece al usuario
-    const product = await this.prisma.product.findUnique({
-      where: { id: productId },
-      select: { userId: true },
-    });
-
-    if (!product) {
-      throw new NotFoundException(`Producto con ID ${productId} no encontrado`);
-    }
-
-    if (product.userId !== userId) {
-      throw new BadRequestException(
-        'No tienes permiso para acceder a este producto',
-      );
-    }
+    // Verificar permisos (ADMIN o dueño del producto)
+    await this.verifyProductOwnership(productId, userId);
 
     // Verificar si la imagen existe
     const image = await this.prisma.productImage.findUnique({
