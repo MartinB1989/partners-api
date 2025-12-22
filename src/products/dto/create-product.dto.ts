@@ -4,6 +4,9 @@ import {
   IsString,
   IsBoolean,
   Min,
+  Max,
+  MinLength,
+  MaxLength,
   IsArray,
   ArrayMinSize,
   ArrayMaxSize,
@@ -15,45 +18,57 @@ export class ProductSizeDto {
   @IsNotEmpty()
   @IsNumber()
   @Min(0)
+  @Max(999999)
   weight: number;
 
   @IsNotEmpty()
   @IsNumber()
   @Min(0)
+  @Max(999999)
   length: number;
 
   @IsNotEmpty()
   @IsNumber()
   @Min(0)
+  @Max(999999)
   height: number;
 
   @IsNotEmpty()
   @IsNumber()
   @Min(0)
+  @Max(999999)
   width: number;
 }
 
 export class CreateProductDto {
   @IsNotEmpty()
   @IsString()
+  @MinLength(3)
+  @MaxLength(200)
   title: string;
 
   @IsNotEmpty()
   @IsString()
+  @MinLength(10)
+  @MaxLength(2000)
   description: string;
 
   @IsNotEmpty()
   @IsString()
+  @MinLength(1)
+  @MaxLength(100)
   sku: string;
 
   @IsNotEmpty()
   @IsNumber()
   @Min(0)
+  @Max(999999999)
   price: number;
 
   @IsNotEmpty()
   @IsNumber()
   @Min(0)
+  @Max(999999)
   stock: number;
 
   @IsBoolean()

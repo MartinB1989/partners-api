@@ -4,6 +4,10 @@ import {
   IsOptional,
   IsBoolean,
   IsNumber,
+  MinLength,
+  MaxLength,
+  Min,
+  Max,
 } from 'class-validator';
 
 /**
@@ -18,6 +22,8 @@ export class CreatePickupAddressDto {
    */
   @IsString()
   @IsNotEmpty()
+  @MinLength(2)
+  @MaxLength(100)
   name: string;
 
   /**
@@ -25,6 +31,8 @@ export class CreatePickupAddressDto {
    */
   @IsString()
   @IsNotEmpty()
+  @MinLength(2)
+  @MaxLength(200)
   street: string;
 
   /**
@@ -32,6 +40,7 @@ export class CreatePickupAddressDto {
    */
   @IsString()
   @IsNotEmpty()
+  @MaxLength(20)
   number: string;
 
   /**
@@ -39,6 +48,8 @@ export class CreatePickupAddressDto {
    */
   @IsString()
   @IsNotEmpty()
+  @MinLength(2)
+  @MaxLength(200)
   city: string;
 
   /**
@@ -46,6 +57,8 @@ export class CreatePickupAddressDto {
    */
   @IsString()
   @IsNotEmpty()
+  @MinLength(2)
+  @MaxLength(200)
   state: string;
 
   /**
@@ -53,6 +66,7 @@ export class CreatePickupAddressDto {
    */
   @IsString()
   @IsNotEmpty()
+  @MaxLength(20)
   zipCode: string;
 
   /**
@@ -60,6 +74,7 @@ export class CreatePickupAddressDto {
    */
   @IsString()
   @IsOptional()
+  @MaxLength(200)
   country?: string;
 
   /**
@@ -67,20 +82,27 @@ export class CreatePickupAddressDto {
    */
   @IsString()
   @IsOptional()
+  @MaxLength(500)
   additionalInfo?: string;
 
   /**
    * Coordenada de latitud para ubicación geográfica
+   * Rango válido: -90 a 90
    */
   @IsNumber()
   @IsOptional()
+  @Min(-90)
+  @Max(90)
   latitude?: number;
 
   /**
    * Coordenada de longitud para ubicación geográfica
+   * Rango válido: -180 a 180
    */
   @IsNumber()
   @IsOptional()
+  @Min(-180)
+  @Max(180)
   longitude?: number;
 
   /**

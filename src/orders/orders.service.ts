@@ -29,13 +29,8 @@ export class OrdersService {
   ) {}
 
   async create(createOrderDto: CreateOrderDto): Promise<Order> {
-    const {
-      items,
-      address,
-      total,
-      deliveryPrice,
-      ...orderData
-    } = createOrderDto;
+    const { items, address, total, deliveryPrice, ...orderData } =
+      createOrderDto;
 
     // Verificar que los productos existan y tengan stock suficiente
     for (const item of items) {
@@ -139,7 +134,10 @@ export class OrdersService {
     // Determinar el filtro según el rol del usuario
     const whereClause: Prisma.OrderWhereInput = {};
 
-    if (user.roles.includes(Role.PRODUCTOR) && !user.roles.includes(Role.ADMIN)) {
+    if (
+      user.roles.includes(Role.PRODUCTOR) &&
+      !user.roles.includes(Role.ADMIN)
+    ) {
       // Si es PRODUCTOR (y no ADMIN), filtrar por órdenes con sus productos
       whereClause.items = {
         some: {

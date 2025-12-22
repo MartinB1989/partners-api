@@ -1,7 +1,17 @@
-import { IsString, IsInt, IsOptional, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsInt,
+  IsOptional,
+  Min,
+  Max,
+  MinLength,
+  MaxLength,
+} from 'class-validator';
 
 export class CreateCategoryDto {
   @IsString()
+  @MinLength(2)
+  @MaxLength(100)
   name: string;
 
   @IsInt()

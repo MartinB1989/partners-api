@@ -1,4 +1,4 @@
-import { IsInt, IsPositive, Min } from 'class-validator';
+import { IsInt, IsPositive, Min, Max } from 'class-validator';
 
 export class AddItemDto {
   @IsInt()
@@ -7,5 +7,6 @@ export class AddItemDto {
 
   @IsInt()
   @Min(1)
+  @Max(9999)
   quantity: number;
 }
