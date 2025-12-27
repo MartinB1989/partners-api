@@ -8,6 +8,8 @@ import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AdminProducerGuard } from './guards/admin-producer.guard';
+import { RefreshTokenService } from './refresh-token.service';
+import { TOKEN_CONSTANTS } from './constants/token.constants';
 
 @Module({
   imports: [
@@ -16,11 +18,18 @@ import { AdminProducerGuard } from './guards/admin-producer.guard';
     PassportModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'secret_hardcoded_para_desarrollo',
-      signOptions: { expiresIn: '24h' },
+      signOptions: {
+        expiresIn: TOKEN_CONSTANTS.ACCESS_TOKEN_EXPIRATION, // ← Ahora usa constante (15m)
+      },
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, AdminProducerGuard],
-  exports: [AuthService],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    AdminProducerGuard,
+    RefreshTokenService, // ← AGREGAR
+  ],
+  exports: [AuthService, RefreshTokenService], // ← AGREGAR RefreshTokenService
 })
 export class AuthModule {}

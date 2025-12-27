@@ -20,6 +20,7 @@ model User {
   orders          Order[]
   pickupAddresses PickupAddress[]
   products        Product[]
+  refreshTokens   RefreshToken[]
 }
 
 model Product {
@@ -219,6 +220,35 @@ model Payment {
 
   @@index([externalId])
   @@index([status])
+}
+
+model RefreshToken {
+  id           String   @id @default(uuid())
+  token        String   @unique // Token hasheado (no guardamos el original)
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Campos de seguridad
+  family       String   // UUID que identifica la familia de tokens (para rotación)
+  isRevoked    Boolean  @default(false) // true = token inválido (logout manual)
+  isUsed       Boolean  @default(false) // true = ya se usó para refresh (no reutilizable)
+
+  // Metadata para auditoría
+  deviceInfo   String?  // User-Agent del navegador/app
+  ipAddress    String?  // IP desde donde se creó el token
+
+  // Timestamps
+  expiresAt    DateTime // Fecha de expiración (7 días desde creación)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  lastUsedAt   DateTime? // Última vez que se usó para refresh
+
+  // Índices para mejorar rendimiento de consultas
+  @@index([userId])      // Buscar tokens de un usuario
+  @@index([token])       // Validar token rápidamente
+  @@index([family])      // Buscar tokens de una familia
+  @@index([expiresAt])   // Limpiar tokens expirados
+  @@index([isRevoked])   // Filtrar tokens revocados
 }
 
 enum PaymentMethod {

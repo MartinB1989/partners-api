@@ -26,17 +26,17 @@ import { APP_GUARD } from '@nestjs/core';
       {
         name: 'short',
         ttl: 1000, // 1 segundo
-        limit: 3, // 3 peticiones por segundo
+        limit: 10, // 10 peticiones por segundo (aumentado de 3 para evitar problemas con refresh token)
       },
       {
         name: 'medium',
         ttl: 10000, // 10 segundos
-        limit: 20, // 20 peticiones por 10 segundos
+        limit: 30, // 30 peticiones por 10 segundos (aumentado de 20)
       },
       {
         name: 'long',
         ttl: 60000, // 1 minuto
-        limit: 100, // 100 peticiones por minuto
+        limit: 150, // 150 peticiones por minuto (aumentado de 100)
       },
     ]),
     PrismaModule,
