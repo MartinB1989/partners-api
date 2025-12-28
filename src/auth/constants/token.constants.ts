@@ -1,6 +1,6 @@
 export const TOKEN_CONSTANTS = {
   // Access token: 15 minutos (formato que entiende jsonwebtoken)
-  ACCESS_TOKEN_EXPIRATION: '1m',
+  ACCESS_TOKEN_EXPIRATION: '15m',
   ACCESS_TOKEN_EXPIRATION_SECONDS: 900, // Para enviar al frontend
 
   // Refresh token: 7 días
