@@ -10,6 +10,7 @@ export function mapOrderStatusToSpanish(status: OrderStatus): string {
     PENDING: 'En proceso',
     PROCESSING: 'En preparación',
     SHIPPED: 'Enviado',
+    READY_FOR_PICKUP: 'Listo para retirar',
     DELIVERED: 'Entregado',
     CANCELLED: 'Cancelado',
   };
@@ -31,6 +32,8 @@ export function mapOrderStatusDescription(status: OrderStatus): string {
       'Tu pedido está siendo preparado para el envío. Pronto estará en camino.',
     SHIPPED:
       'Tu pedido ha sido enviado y está en camino. Recibirás la información de seguimiento pronto.',
+    READY_FOR_PICKUP:
+      'Tu pedido está listo para retirar. Puedes pasar a buscarlo en la dirección de retiro indicada.',
     DELIVERED:
       'Tu pedido ha sido entregado con éxito. ¡Esperamos que disfrutes tu compra!',
     CANCELLED:
