@@ -17,15 +17,15 @@ export class CleanupTokensTask {
   // @Cron(CronExpression.EVERY_MINUTE) // TESTING: cada minuto
   @Cron(CronExpression.EVERY_DAY_AT_3AM) // Producción: cada día a las 3 AM
   async handleTokenCleanup() {
-    this.logger.log('🧹 Iniciando limpieza de refresh tokens expirados...');
+    this.logger.log('Iniciando limpieza de refresh tokens expirados...');
 
     try {
       const deletedCount = await this.refreshTokenService.deleteExpiredTokens();
       this.logger.log(
-        `✅ Limpieza completada: ${deletedCount} tokens eliminados`,
+        `SUCCESS: Limpieza completada: ${deletedCount} tokens eliminados`,
       );
     } catch (error) {
-      this.logger.error('❌ Error durante limpieza de tokens:', error);
+      this.logger.error('ERROR: error durante limpieza de tokens:', error);
     }
   }
 }
