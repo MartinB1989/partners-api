@@ -10,6 +10,7 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { AdminProducerGuard } from './guards/admin-producer.guard';
 import { RefreshTokenService } from './refresh-token.service';
 import { TOKEN_CONSTANTS } from './constants/token.constants';
+import { CleanupTokensTask } from './tasks/cleanup-tokens.task';
 
 @Module({
   imports: [
@@ -28,7 +29,8 @@ import { TOKEN_CONSTANTS } from './constants/token.constants';
     AuthService,
     JwtStrategy,
     AdminProducerGuard,
-    RefreshTokenService, // ← AGREGAR
+    RefreshTokenService,
+    CleanupTokensTask, // ← Tarea de limpieza automática
   ],
   exports: [AuthService, RefreshTokenService], // ← AGREGAR RefreshTokenService
 })

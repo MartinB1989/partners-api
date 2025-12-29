@@ -5,6 +5,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ProductsModule } from './products/products.module';
 import { AwsModule } from './aws/aws.module';
 import { CategoriesModule } from './categories/categories.module';
@@ -18,6 +19,7 @@ import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(), // ← Habilita cron jobs y tareas programadas
     ConfigModule.forRoot({
       isGlobal: true, // Hace que el ConfigModule esté disponible en toda la aplicación
       envFilePath: '.env', // Ruta al archivo .env
