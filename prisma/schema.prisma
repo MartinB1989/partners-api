@@ -21,6 +21,7 @@ model User {
   pickupAddresses PickupAddress[]
   products        Product[]
   refreshTokens   RefreshToken[]
+  sellerSettings  SellerSettings?
 }
 
 model Product {
@@ -249,6 +250,18 @@ model RefreshToken {
   @@index([family])      // Buscar tokens de una familia
   @@index([expiresAt])   // Limpiar tokens expirados
   @@index([isRevoked])   // Filtrar tokens revocados
+}
+
+model SellerSettings {
+  id                    String   @id @default(uuid())
+  userId                String   @unique
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  acceptsHomeDelivery   Boolean  @default(false)  // Acepta envíos a domicilio
+  acceptsPickup         Boolean  @default(false)  // Acepta retiro en persona
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([userId])
 }
 
 enum PaymentMethod {

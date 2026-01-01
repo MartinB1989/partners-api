@@ -3,12 +3,14 @@ import {
   Injectable,
   ConflictException,
   NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateSellerSettingsDto } from './dto/update-seller-settings.dto';
 import * as bcrypt from 'bcrypt';
-import { Role, User } from '@prisma/client';
+import { Role, User, SellerSettings } from '@prisma/client';
 
 @Injectable()
 export class UsersService {
@@ -106,5 +108,107 @@ export class UsersService {
     } catch {
       throw new NotFoundException('Usuario no encontrado');
     }
+  }
+
+  // Métodos para configuración de vendedor
+  async getSellerSettings(userId: string): Promise<SellerSettings> {
+    // Verificar que el usuario existe y es vendedor
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { roles: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    if (
+      !user.roles.includes(Role.ADMIN) &&
+      !user.roles.includes(Role.PRODUCTOR)
+    ) {
+      throw new ForbiddenException(
+        'Solo vendedores (ADMIN o PRODUCTOR) pueden tener configuración de vendedor',
+      );
+    }
+
+    // Buscar configuración existente o crear una por defecto
+    let settings = await this.prisma.sellerSettings.findUnique({
+      where: { userId },
+    });
+
+    // Si no existe, crear configuración por defecto
+    if (!settings) {
+      settings = await this.prisma.sellerSettings.create({
+        data: {
+          userId,
+          acceptsHomeDelivery: false,
+          acceptsPickup: false,
+        },
+      });
+    }
+
+    return settings;
+  }
+
+  async updateSellerSettings(
+    userId: string,
+    updateDto: UpdateSellerSettingsDto,
+  ): Promise<SellerSettings> {
+    // Verificar que el usuario existe y es vendedor
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { roles: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    if (
+      !user.roles.includes(Role.ADMIN) &&
+      !user.roles.includes(Role.PRODUCTOR)
+    ) {
+      throw new ForbiddenException(
+        'Solo vendedores (ADMIN o PRODUCTOR) pueden actualizar configuración de vendedor',
+      );
+    }
+
+    // Validar que si quiere aceptar retiros en persona, tenga al menos una dirección de retiro activa
+    if (updateDto.acceptsPickup === true) {
+      const activePickupAddressCount = await this.prisma.pickupAddress.count({
+        where: {
+          userId,
+          isActive: true,
+        },
+      });
+
+      if (activePickupAddressCount === 0) {
+        throw new ConflictException(
+          'Para aceptar retiros en persona debes tener al menos una dirección de retiro activa',
+        );
+      }
+    }
+
+    // Buscar configuración existente
+    const existingSettings = await this.prisma.sellerSettings.findUnique({
+      where: { userId },
+    });
+
+    // Si existe, actualizar
+    if (existingSettings) {
+      return await this.prisma.sellerSettings.update({
+        where: { userId },
+        data: updateDto,
+      });
+    }
+
+    // Si no existe, crear con los valores proporcionados
+    return await this.prisma.sellerSettings.create({
+      data: {
+        userId,
+        acceptsHomeDelivery: updateDto.acceptsHomeDelivery ?? false,
+        acceptsPickup: updateDto.acceptsPickup ?? false,
+      },
+    });
   }
 }
