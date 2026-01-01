@@ -12,11 +12,51 @@ import {
   UpdateItemQuantityDto,
 } from './dto';
 import { Address, DeliveryType } from '@prisma/client';
-import { CartWithRelations, CartItemWithProduct } from './models/cart.model';
+import {
+  CartWithRelations,
+  CartItemWithProduct,
+  ItemsByVendor,
+} from './models/cart.model';
 
 @Injectable()
 export class CartsService {
   constructor(private readonly prisma: PrismaService) {}
+
+  // Método auxiliar para agrupar items por vendedor
+  private groupItemsByVendor(items: CartItemWithProduct[]): ItemsByVendor[] {
+    const vendorMap = new Map<string, ItemsByVendor>();
+
+    for (const item of items) {
+      const vendorId = item.product.userId;
+      const vendor = item.product.user;
+
+      if (!vendorMap.has(vendorId)) {
+        vendorMap.set(vendorId, {
+          vendor: {
+            id: vendor.id,
+            name: vendor.name,
+            email: vendor.email,
+          },
+          items: [],
+          subtotal: 0,
+        });
+      }
+
+      const vendorGroup = vendorMap.get(vendorId)!;
+      vendorGroup.items.push(item);
+      vendorGroup.subtotal += item.subTotal;
+    }
+
+    return Array.from(vendorMap.values());
+  }
+
+  // Método auxiliar para transformar el carrito con items agrupados
+  private transformCartWithVendors(cart: CartWithRelations): CartWithRelations {
+    return {
+      ...cart,
+      itemsByVendor: this.groupItemsByVendor(cart.items),
+    };
+  }
 
   // Crear un carrito
   async create(createCartDto: CreateCartDto): Promise<CartWithRelations> {
@@ -34,6 +74,16 @@ export class CartsService {
             product: {
               include: {
                 images: true,
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    roles: true,
+                    createdAt: true,
+                    updatedAt: true,
+                  },
+                },
               },
             },
           },
@@ -42,7 +92,7 @@ export class CartsService {
       },
     });
 
-    return cart as unknown as CartWithRelations;
+    return this.transformCartWithVendors(cart as unknown as CartWithRelations);
   }
 
   // Encontrar un carrito para un usuario registrado
@@ -57,6 +107,16 @@ export class CartsService {
             product: {
               include: {
                 images: true,
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    roles: true,
+                    createdAt: true,
+                    updatedAt: true,
+                  },
+                },
               },
             },
           },
@@ -72,7 +132,7 @@ export class CartsService {
       return this.create({ userId });
     }
 
-    return cart as unknown as CartWithRelations;
+    return this.transformCartWithVendors(cart as unknown as CartWithRelations);
   }
 
   // Encontrar un carrito para un usuario anónimo
@@ -88,6 +148,16 @@ export class CartsService {
               include: {
                 images: true,
                 size: true,
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    roles: true,
+                    createdAt: true,
+                    updatedAt: true,
+                  },
+                },
               },
             },
           },
@@ -103,7 +173,7 @@ export class CartsService {
       return this.create({ sessionId });
     }
 
-    return cart as unknown as CartWithRelations;
+    return this.transformCartWithVendors(cart as unknown as CartWithRelations);
   }
 
   // Añadir un producto al carrito
@@ -177,6 +247,16 @@ export class CartsService {
             product: {
               include: {
                 images: true,
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    roles: true,
+                    createdAt: true,
+                    updatedAt: true,
+                  },
+                },
               },
             },
           },
@@ -198,6 +278,16 @@ export class CartsService {
             product: {
               include: {
                 images: true,
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    roles: true,
+                    createdAt: true,
+                    updatedAt: true,
+                  },
+                },
               },
             },
           },
@@ -275,6 +365,16 @@ export class CartsService {
           product: {
             include: {
               images: true,
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  roles: true,
+                  createdAt: true,
+                  updatedAt: true,
+                },
+              },
             },
           },
         },
@@ -346,6 +446,16 @@ export class CartsService {
               product: {
                 include: {
                   images: true,
+                  user: {
+                    select: {
+                      id: true,
+                      name: true,
+                      email: true,
+                      roles: true,
+                      createdAt: true,
+                      updatedAt: true,
+                    },
+                  },
                 },
               },
             },
@@ -354,7 +464,9 @@ export class CartsService {
         },
       });
 
-      return updatedCart;
+      return this.transformCartWithVendors(
+        updatedCart as unknown as CartWithRelations,
+      );
     });
   }
 
@@ -384,6 +496,16 @@ export class CartsService {
             product: {
               include: {
                 images: true,
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    roles: true,
+                    createdAt: true,
+                    updatedAt: true,
+                  },
+                },
               },
             },
           },
@@ -392,7 +514,9 @@ export class CartsService {
       },
     });
 
-    return updatedCart as unknown as CartWithRelations;
+    return this.transformCartWithVendors(
+      updatedCart as unknown as CartWithRelations,
+    );
   }
 
   // Vaciar el carrito
@@ -431,6 +555,16 @@ export class CartsService {
               product: {
                 include: {
                   images: true,
+                  user: {
+                    select: {
+                      id: true,
+                      name: true,
+                      email: true,
+                      roles: true,
+                      createdAt: true,
+                      updatedAt: true,
+                    },
+                  },
                 },
               },
             },
@@ -439,7 +573,9 @@ export class CartsService {
         },
       });
 
-      return updatedCart as unknown as CartWithRelations;
+      return this.transformCartWithVendors(
+        updatedCart as unknown as CartWithRelations,
+      );
     });
   }
 
@@ -490,6 +626,16 @@ export class CartsService {
               product: {
                 include: {
                   images: true,
+                  user: {
+                    select: {
+                      id: true,
+                      name: true,
+                      email: true,
+                      roles: true,
+                      createdAt: true,
+                      updatedAt: true,
+                    },
+                  },
                 },
               },
             },
@@ -498,7 +644,9 @@ export class CartsService {
         },
       });
 
-      return updatedCart as unknown as CartWithRelations;
+      return this.transformCartWithVendors(
+        updatedCart as unknown as CartWithRelations,
+      );
     }
 
     // Si el usuario ya tiene carrito, transferir los items del carrito anónimo al carrito del usuario
@@ -582,6 +730,16 @@ export class CartsService {
               product: {
                 include: {
                   images: true,
+                  user: {
+                    select: {
+                      id: true,
+                      name: true,
+                      email: true,
+                      roles: true,
+                      createdAt: true,
+                      updatedAt: true,
+                    },
+                  },
                 },
               },
             },
@@ -590,7 +748,9 @@ export class CartsService {
         },
       });
 
-      return updatedUserCart as unknown as CartWithRelations;
+      return this.transformCartWithVendors(
+        updatedUserCart as unknown as CartWithRelations,
+      );
     });
   }
 
