@@ -32,11 +32,20 @@ export class OrdersService {
     const { items, address, total, deliveryPrice, ...orderData } =
       createOrderDto;
 
-    // Verificar que los productos existan y tengan stock suficiente
-    for (const item of items) {
-      const product = await this.prisma.product.findUnique({
-        where: { id: item.productId },
-      });
+    // Obtener los productos y validar existencia, stock y vendedor único
+    const products = await Promise.all(
+      items.map((item) =>
+        this.prisma.product.findUnique({
+          where: { id: item.productId },
+          select: { id: true, userId: true, stock: true, title: true },
+        }),
+      ),
+    );
+
+    // Verificar que todos los productos existan
+    for (let i = 0; i < items.length; i++) {
+      const product = products[i];
+      const item = items[i];
 
       if (!product) {
         throw new NotFoundException(
@@ -49,6 +58,15 @@ export class OrdersService {
           `Stock insuficiente para el producto ${product.title}`,
         );
       }
+    }
+
+    // Validar que todos los productos sean del mismo vendedor
+    const vendorIds = [...new Set(products.map((p) => p!.userId))];
+
+    if (vendorIds.length > 1) {
+      throw new BadRequestException(
+        'No se pueden procesar órdenes con productos de múltiples vendedores',
+      );
     }
 
     try {

@@ -579,6 +579,82 @@ export class CartsService {
     });
   }
 
+  // Eliminar items específicos del carrito (usado después de crear una orden)
+  async removeSpecificItems(
+    cartId: string,
+    productIds: number[],
+  ): Promise<CartWithRelations> {
+    // Verificar que el carrito existe
+    const cart = await this.prisma.cart.findUnique({
+      where: { id: cartId },
+      include: { items: true },
+    });
+
+    if (!cart) {
+      throw new NotFoundException(`Carrito con ID ${cartId} no encontrado`);
+    }
+
+    // Usar transacción para eliminar items y actualizar el total
+    return this.prisma.$transaction(async (tx) => {
+      // Eliminar solo los items con los productIds especificados
+      await tx.cartItem.deleteMany({
+        where: {
+          cartId,
+          productId: {
+            in: productIds,
+          },
+        },
+      });
+
+      // Calcular el nuevo total del carrito
+      const remainingItems = await tx.cartItem.findMany({
+        where: { cartId },
+      });
+
+      const total = remainingItems.reduce(
+        (sum, item) => sum + item.subTotal,
+        0,
+      );
+
+      // Actualizar el total del carrito
+      await tx.cart.update({
+        where: { id: cartId },
+        data: { total },
+      });
+
+      // Obtener el carrito actualizado para devolver
+      const updatedCart = await tx.cart.findUnique({
+        where: { id: cartId },
+        include: {
+          items: {
+            include: {
+              product: {
+                include: {
+                  images: true,
+                  user: {
+                    select: {
+                      id: true,
+                      name: true,
+                      email: true,
+                      roles: true,
+                      createdAt: true,
+                      updatedAt: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          address: true,
+        },
+      });
+
+      return this.transformCartWithVendors(
+        updatedCart as unknown as CartWithRelations,
+      );
+    });
+  }
+
   // Transferir un carrito anónimo a un usuario registrado
   async transferCartToUser(
     sessionId: string,

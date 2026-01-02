@@ -47,7 +47,7 @@ export class OrdersController {
       const paymentPreference =
         await this.paymentsService.initiateMercadoPagoPayment(order.id);
 
-      // Paso 3: Solo si todo fue exitoso, limpiar el carrito
+      // Paso 3: Solo si todo fue exitoso, limpiar del carrito los productos de la orden
       const cookies = req.cookies as Record<string, string>;
       const cartSessionId = cookies?.cart_session_id;
 
@@ -56,11 +56,20 @@ export class OrdersController {
           const cart =
             await this.cartsService.findOneBySessionId(cartSessionId);
           if (cart) {
-            await this.cartsService.clear(cart.id);
+            // Extraer los IDs de productos de la orden
+            const productIds = createOrderDto.items.map(
+              (item) => item.productId,
+            );
+
+            // Eliminar solo los productos de la orden del carrito
+            await this.cartsService.removeSpecificItems(cart.id, productIds);
           }
         } catch (error) {
-          // No interrumpir el flujo si hay error al vaciar el carrito
-          console.error('Error al vaciar el carrito:', error);
+          // No interrumpir el flujo si hay error al limpiar el carrito
+          console.error(
+            'Error al limpiar items del carrito:',
+            error instanceof Error ? error.message : String(error),
+          );
         }
       }
 

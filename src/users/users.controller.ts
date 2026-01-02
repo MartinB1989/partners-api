@@ -98,7 +98,8 @@ export class UsersController {
   })
   @ApiResponse({
     status: 409,
-    description: 'Para aceptar retiros debe tener al menos una dirección de retiro activa',
+    description:
+      'Para aceptar retiros debe tener al menos una dirección de retiro activa',
   })
   updateMySellerSettings(
     @CurrentUser() user: any,
