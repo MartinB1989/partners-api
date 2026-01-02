@@ -63,4 +63,19 @@ export class PickupAddressesService {
       where: { id },
     });
   }
+
+  async findActiveByUser(userId: string) {
+    const pickupAddresses = await this.prisma.pickupAddress.findMany({
+      where: {
+        userId,
+        isActive: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return pickupAddresses.map((address) => ({
+      ...address,
+      addressStr: `${address.street} ${address.number}, ${address.city}, ${address.state}${address.zipCode ? `, CP ${address.zipCode}` : ''}`,
+    }));
+  }
 }

@@ -42,6 +42,12 @@ export class PickupAddressesController {
     return this.pickupAddressesService.findAll();
   }
 
+  @Public()
+  @Get('seller/:sellerId/active')
+  findActiveByUser(@Param('sellerId') sellerId: string) {
+    return this.pickupAddressesService.findActiveByUser(sellerId);
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number, @GetUser() user: User) {
     return this.pickupAddressesService.findOne(id, user.id);

@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from '../decorators/roles.decorator';
+import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import { Role } from '@prisma/client';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { User } from '../../../generated/prisma/client';
@@ -19,6 +20,16 @@ export class RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    // Verificamos si la ruta es pública
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
+    if (isPublic) {
+      return true;
+    }
+
     // Primero verificamos que el usuario esté autenticado
     const jwtGuard = new JwtAuthGuard(this.reflector);
     const isAuthenticated = await jwtGuard.canActivate(context);
