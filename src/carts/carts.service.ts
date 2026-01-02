@@ -36,6 +36,13 @@ export class CartsService {
             id: vendor.id,
             name: vendor.name,
             email: vendor.email,
+            sellerSettings: vendor.sellerSettings
+              ? {
+                  acceptsHomeDelivery:
+                    vendor.sellerSettings.acceptsHomeDelivery,
+                  acceptsPickup: vendor.sellerSettings.acceptsPickup,
+                }
+              : null,
           },
           items: [],
           subtotal: 0,
@@ -115,6 +122,12 @@ export class CartsService {
                     roles: true,
                     createdAt: true,
                     updatedAt: true,
+                    sellerSettings: {
+                      select: {
+                        acceptsHomeDelivery: true,
+                        acceptsPickup: true,
+                      },
+                    },
                   },
                 },
               },
@@ -156,6 +169,12 @@ export class CartsService {
                     roles: true,
                     createdAt: true,
                     updatedAt: true,
+                    sellerSettings: {
+                      select: {
+                        acceptsHomeDelivery: true,
+                        acceptsPickup: true,
+                      },
+                    },
                   },
                 },
               },
@@ -193,6 +212,13 @@ export class CartsService {
     // Verificar que el producto existe y tiene stock
     const product = await this.prisma.product.findUnique({
       where: { id: addItemDto.productId },
+      include: {
+        user: {
+          include: {
+            sellerSettings: true,
+          },
+        },
+      },
     });
 
     if (!product) {
@@ -210,6 +236,20 @@ export class CartsService {
     if (product.stock < addItemDto.quantity) {
       throw new BadRequestException(
         `Producto con ID ${addItemDto.productId} no tiene suficiente stock (disponible: ${product.stock})`,
+      );
+    }
+
+    // Verificar que el vendedor tenga al menos un método de entrega configurado
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+    const sellerSettings = product.user.sellerSettings;
+    const hasDeliveryMethod = Boolean(
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      sellerSettings?.acceptsHomeDelivery || sellerSettings?.acceptsPickup,
+    );
+
+    if (!hasDeliveryMethod) {
+      throw new BadRequestException(
+        `El vendedor de este producto no tiene configurado ningún método de entrega`,
       );
     }
 

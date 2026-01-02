@@ -274,6 +274,12 @@ export class ProductsService {
           select: {
             id: true,
             name: true,
+            sellerSettings: {
+              select: {
+                acceptsHomeDelivery: true,
+                acceptsPickup: true,
+              },
+            },
           },
         },
         productCategories: {

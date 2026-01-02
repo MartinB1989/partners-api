@@ -19,7 +19,12 @@ export interface CartItemWithProduct extends CartItem {
 
 export interface ProductWithImages extends Product {
   images: ProductImage[];
-  user: Omit<User, 'password'>;
+  user: Omit<User, 'password'> & {
+    sellerSettings?: {
+      acceptsHomeDelivery: boolean;
+      acceptsPickup: boolean;
+    } | null;
+  };
 }
 
 // Interfaz para agrupar items por vendedor
@@ -28,6 +33,10 @@ export interface ItemsByVendor {
     id: string;
     name: string;
     email: string;
+    sellerSettings: {
+      acceptsHomeDelivery: boolean;
+      acceptsPickup: boolean;
+    } | null;
   };
   items: CartItemWithProduct[];
   subtotal: number;
