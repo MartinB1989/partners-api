@@ -8,13 +8,13 @@ datasource db {
 }
 
 model User {
-  id              String          @id @default(uuid())
-  email           String          @unique
+  id              String           @id @default(uuid())
+  email           String           @unique
   password        String
   name            String
   roles           Role[]
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
   addresses       Address[]
   carts           Cart[]
   orders          Order[]
@@ -22,6 +22,7 @@ model User {
   products        Product[]
   refreshTokens   RefreshToken[]
   sellerSettings  SellerSettings?
+  mpSplitAccount  MPSplitAccount?
 }
 
 model Product {
@@ -262,6 +263,25 @@ model SellerSettings {
   updatedAt             DateTime @updatedAt
 
   @@index([userId])
+}
+
+model MPSplitAccount {
+  id           Int      @id @default(autoincrement())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken  String
+  tokenType    String
+  expiresAt    DateTime // Convertido desde expiresIn (timestamp)
+  scope        String
+  mpUserId     String   // user_id de Mercado Pago
+  refreshToken String
+  publicKey    String
+  liveMode     Boolean
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId])
+  @@index([mpUserId])
 }
 
 enum PaymentMethod {
