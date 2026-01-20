@@ -14,6 +14,7 @@ import { PickupAddressesModule } from './pickup-addresses/pickup-addresses.modul
 import { OrdersModule } from './orders/orders.module';
 import { EmailModule } from './email/email.module';
 import { PaymentsModule } from './payments/payments.module';
+import { SplitIntegrationsModule } from './split-integrations/split-integrations.module';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 
@@ -52,6 +53,7 @@ import { APP_GUARD } from '@nestjs/core';
     OrdersModule,
     EmailModule,
     PaymentsModule,
+    SplitIntegrationsModule,
   ],
   controllers: [AppController],
   providers: [
