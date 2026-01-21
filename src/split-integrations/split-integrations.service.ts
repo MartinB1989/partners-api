@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import axios from 'axios';
+import { encrypt } from '../common/utils/encryption.util';
 
 interface MercadoPagoOAuthResponse {
   access_token: string;
@@ -62,27 +63,40 @@ export class SplitIntegrationsService {
       const expiresAt = new Date();
       expiresAt.setSeconds(expiresAt.getSeconds() + expires_in);
 
+      // Obtener la clave de encriptación desde las variables de entorno
+      const encryptionSecret = this.configService.get<string>(
+        'ENCRYPTION_SECRET',
+      );
+
+      if (!encryptionSecret) {
+        throw new Error('ENCRYPTION_SECRET is not configured');
+      }
+
+      // Encriptar datos sensibles
+      const encryptedAccessToken = encrypt(access_token, encryptionSecret);
+      const encryptedRefreshToken = encrypt(refresh_token, encryptionSecret);
+
       // Guardar o actualizar en la base de datos
       const mpSplitAccount = await this.prisma.mPSplitAccount.upsert({
         where: { userId },
         create: {
           userId,
-          accessToken: access_token,
+          accessToken: encryptedAccessToken,
           tokenType: token_type,
           expiresAt,
           scope,
           mpUserId: String(user_id),
-          refreshToken: refresh_token,
+          refreshToken: encryptedRefreshToken,
           publicKey: public_key,
           liveMode: live_mode,
         },
         update: {
-          accessToken: access_token,
+          accessToken: encryptedAccessToken,
           tokenType: token_type,
           expiresAt,
           scope,
           mpUserId: String(user_id),
-          refreshToken: refresh_token,
+          refreshToken: encryptedRefreshToken,
           publicKey: public_key,
           liveMode: live_mode,
         },
