@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Delete, Get, Query, UseGuards } from '@nestjs/common';
 import { SplitIntegrationsService } from './split-integrations.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -19,5 +19,12 @@ export class SplitIntegrationsController {
     @CurrentUser() user: User,
   ) {
     return this.splitIntegrationsService.handleMPCode(code, user.id);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(Role.PRODUCTOR, Role.ADMIN)
+  @Delete('mercadopago')
+  async removeMercadoPagoIntegration(@CurrentUser() user: User) {
+    return await this.splitIntegrationsService.removeMPIntegration(user.id);
   }
 }

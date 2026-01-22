@@ -124,4 +124,27 @@ export class SplitIntegrationsService {
       throw error;
     }
   }
+
+  async removeMPIntegration(userId: string): Promise<{
+    success: boolean;
+    message: string;
+  }> {
+    const deleted = await this.prisma.mPSplitAccount.deleteMany({
+      where: { userId },
+    });
+
+    if (deleted.count === 0) {
+      return {
+        success: false,
+        message: 'No se encontró una integración de Mercado Pago para este usuario',
+      };
+    }
+
+    this.logger.log(`MercadoPago integration removed for user ${userId}`);
+
+    return {
+      success: true,
+      message: 'Integración de Mercado Pago eliminada exitosamente',
+    };
+  }
 }
