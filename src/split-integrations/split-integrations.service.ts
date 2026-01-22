@@ -46,8 +46,6 @@ export class SplitIntegrationsService {
         },
       );
 
-      console.log('MercadoPago OAuth Response:', response.data);
-
       const {
         access_token,
         token_type,
