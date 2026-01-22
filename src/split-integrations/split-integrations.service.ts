@@ -64,9 +64,8 @@ export class SplitIntegrationsService {
       expiresAt.setSeconds(expiresAt.getSeconds() + expires_in);
 
       // Obtener la clave de encriptación desde las variables de entorno
-      const encryptionSecret = this.configService.get<string>(
-        'ENCRYPTION_SECRET',
-      );
+      const encryptionSecret =
+        this.configService.get<string>('ENCRYPTION_SECRET');
 
       if (!encryptionSecret) {
         throw new Error('ENCRYPTION_SECRET is not configured');
@@ -136,7 +135,8 @@ export class SplitIntegrationsService {
     if (deleted.count === 0) {
       return {
         success: false,
-        message: 'No se encontró una integración de Mercado Pago para este usuario',
+        message:
+          'No se encontró una integración de Mercado Pago para este usuario',
       };
     }
 
@@ -146,5 +146,13 @@ export class SplitIntegrationsService {
       success: true,
       message: 'Integración de Mercado Pago eliminada exitosamente',
     };
+  }
+
+  async hasIntegration(userId: string): Promise<boolean> {
+    const mpAccount = await this.prisma.mPSplitAccount.findUnique({
+      where: { userId },
+    });
+
+    return mpAccount !== null;
   }
 }

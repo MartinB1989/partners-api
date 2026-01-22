@@ -27,4 +27,16 @@ export class SplitIntegrationsController {
   async removeMercadoPagoIntegration(@CurrentUser() user: User) {
     return await this.splitIntegrationsService.removeMPIntegration(user.id);
   }
+
+  @UseGuards(RolesGuard)
+  @Roles(Role.PRODUCTOR, Role.ADMIN)
+  @Get('mercadopago/status')
+  async checkMercadoPagoIntegration(@CurrentUser() user: User) {
+    const hasIntegration = await this.splitIntegrationsService.hasIntegration(
+      user.id,
+    );
+    return {
+      hasIntegration,
+    };
+  }
 }

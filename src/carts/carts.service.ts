@@ -240,10 +240,9 @@ export class CartsService {
     }
 
     // Verificar que el vendedor tenga al menos un método de entrega configurado
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+
     const sellerSettings = product.user.sellerSettings;
     const hasDeliveryMethod = Boolean(
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       sellerSettings?.acceptsHomeDelivery || sellerSettings?.acceptsPickup,
     );
 
