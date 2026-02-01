@@ -101,46 +101,56 @@ export class PaymentsService {
       });
 
       if (sellerMPAccount) {
-        try {
-          const encryptionSecret =
-            this.configService.get<string>('ENCRYPTION_SECRET');
+        // Verificar si el token no está expirado
+        const now = new Date();
+        const isTokenExpired = sellerMPAccount.expiresAt < now;
 
-          if (!encryptionSecret) {
-            throw new Error('ENCRYPTION_SECRET is not configured');
+        if (isTokenExpired) {
+          this.logger.warn(
+            `Seller ${sellerId} MercadoPago token expired at ${sellerMPAccount.expiresAt}. Using platform account for order ${orderId}`,
+          );
+        } else {
+          try {
+            const encryptionSecret =
+              this.configService.get<string>('ENCRYPTION_SECRET');
+
+            if (!encryptionSecret) {
+              throw new Error('ENCRYPTION_SECRET is not configured');
+            }
+
+            const sellerAccessToken = decrypt(
+              sellerMPAccount.accessToken,
+              encryptionSecret,
+            );
+
+            // Calcular marketplace fee
+            const feePercentage = this.configService.get<number>(
+              'MARKETPLACE_FEE_PERCENTAGE',
+              10,
+            );
+            const feeCap = this.configService.get<number>(
+              'MARKETPLACE_FEE_CAP_ARS',
+              5000,
+            );
+            const calculatedFee = (Number(order.total) * feePercentage) / 100;
+            const marketplaceFee = Math.min(calculatedFee, feeCap);
+
+            splitOptions = {
+              sellerAccessToken,
+              marketplaceFee,
+            };
+
+            this.logger.log(
+              `Using split payment for order ${orderId} - Seller: ${sellerId}, Fee: ${marketplaceFee} ARS`,
+            );
+          } catch (error) {
+            this.logger.error(
+              `Error preparing split payment for order ${orderId}: ${error.message}. Falling back to platform account.`,
+              error.stack,
+            );
+            // Si falla la preparación del split payment, usar la cuenta principal
+            splitOptions = undefined;
           }
-
-          const sellerAccessToken = decrypt(
-            sellerMPAccount.accessToken,
-            encryptionSecret,
-          );
-
-          // Calcular marketplace fee
-          const feePercentage = this.configService.get<number>(
-            'MARKETPLACE_FEE_PERCENTAGE',
-            10,
-          );
-          const feeCap = this.configService.get<number>(
-            'MARKETPLACE_FEE_CAP_ARS',
-            5000,
-          );
-          const calculatedFee = (Number(order.total) * feePercentage) / 100;
-          const marketplaceFee = Math.min(calculatedFee, feeCap);
-
-          splitOptions = {
-            sellerAccessToken,
-            marketplaceFee,
-          };
-
-          this.logger.log(
-            `Using split payment for order ${orderId} - Seller: ${sellerId}, Fee: ${marketplaceFee} ARS`,
-          );
-        } catch (error) {
-          this.logger.error(
-            `Error preparing split payment for order ${orderId}: ${error.message}. Falling back to platform account.`,
-            error.stack,
-          );
-          // Si falla la preparación del split payment, usar la cuenta principal
-          splitOptions = undefined;
         }
       } else {
         this.logger.log(
