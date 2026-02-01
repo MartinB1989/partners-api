@@ -7,7 +7,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { PrismaModule } from '../prisma/prisma.module';
-import { AdminProducerGuard } from './guards/admin-producer.guard';
+import { AdminProductorGuard } from './guards/admin-productor.guard';
 import { RefreshTokenService } from './refresh-token.service';
 import { TOKEN_CONSTANTS } from './constants/token.constants';
 import { CleanupTokensTask } from './tasks/cleanup-tokens.task';
@@ -28,7 +28,7 @@ import { CleanupTokensTask } from './tasks/cleanup-tokens.task';
   providers: [
     AuthService,
     JwtStrategy,
-    AdminProducerGuard,
+    AdminProductorGuard,
     RefreshTokenService,
     CleanupTokensTask, // ← Tarea de limpieza automática
   ],

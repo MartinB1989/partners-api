@@ -1,4 +1,4 @@
-// src/auth/guards/admin-producer.guard.ts
+// src/auth/guards/admin-productor.guard.ts
 import {
   CanActivate,
   ExecutionContext,
@@ -10,7 +10,7 @@ import { Role } from '@prisma/client';
 import { Request } from 'express';
 
 @Injectable()
-export class AdminProducerGuard implements CanActivate {
+export class AdminProductorGuard implements CanActivate {
   constructor(private prisma: PrismaService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {

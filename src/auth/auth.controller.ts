@@ -16,7 +16,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { User } from '@prisma/client';
 import { AdminLoginDto } from './dto/admin-login.dto';
-import { AdminProducerGuard } from './guards/admin-producer.guard';
+import { AdminProductorGuard } from './guards/admin-productor.guard';
 import { Throttle, SkipThrottle } from '@nestjs/throttler';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { Request } from 'express';
@@ -48,7 +48,7 @@ export class AuthController {
 
   // Admin login: máximo 3 intentos por 5 minutos
   @Throttle({ long: { ttl: 300000, limit: 3 } })
-  @UseGuards(AdminProducerGuard)
+  @UseGuards(AdminProductorGuard)
   @Post('admin/login')
   async adminLogin(@Body() adminLoginDto: AdminLoginDto, @Req() req: Request) {
     const deviceInfo = req.headers['user-agent'];
