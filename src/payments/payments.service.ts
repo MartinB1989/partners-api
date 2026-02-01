@@ -4,9 +4,14 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
-import { MercadoPagoService } from './mercadopago/mercadopago.service';
+import {
+  MercadoPagoService,
+  SplitPaymentOptions,
+} from './mercadopago/mercadopago.service';
 import { PaymentMethod, PaymentStatus, OrderStatus } from '@prisma/client';
+import { decrypt } from '../common/utils/encryption.util';
 
 @Injectable()
 export class PaymentsService {
@@ -15,6 +20,7 @@ export class PaymentsService {
   constructor(
     private prisma: PrismaService,
     private mercadoPagoService: MercadoPagoService,
+    private configService: ConfigService,
   ) {}
 
   async createPayment(orderId: number, paymentMethod: PaymentMethod) {
@@ -55,7 +61,13 @@ export class PaymentsService {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
       include: {
-        items: true,
+        items: {
+          include: {
+            product: {
+              select: { userId: true },
+            },
+          },
+        },
       },
     });
 
@@ -77,8 +89,68 @@ export class PaymentsService {
       payment = await this.createPayment(orderId, PaymentMethod.MERCADOPAGO);
     }
 
+    // Determinar si usar split payment (cuenta del vendedor) o cuenta principal
+    let splitOptions: SplitPaymentOptions | undefined;
+
+    // Obtener sellerId del primer producto (ya validado que todos son del mismo vendedor en orders.service.ts)
+    const sellerId = order.items[0]?.product?.userId;
+
+    if (sellerId) {
+      const sellerMPAccount = await this.prisma.mPSplitAccount.findUnique({
+        where: { userId: sellerId },
+      });
+
+      if (sellerMPAccount) {
+        try {
+          const encryptionSecret =
+            this.configService.get<string>('ENCRYPTION_SECRET');
+
+          if (!encryptionSecret) {
+            throw new Error('ENCRYPTION_SECRET is not configured');
+          }
+
+          const sellerAccessToken = decrypt(
+            sellerMPAccount.accessToken,
+            encryptionSecret,
+          );
+
+          // Calcular marketplace fee
+          const feePercentage = this.configService.get<number>(
+            'MARKETPLACE_FEE_PERCENTAGE',
+            10,
+          );
+          const feeCap = this.configService.get<number>(
+            'MARKETPLACE_FEE_CAP_ARS',
+            5000,
+          );
+          const calculatedFee = (Number(order.total) * feePercentage) / 100;
+          const marketplaceFee = Math.min(calculatedFee, feeCap);
+
+          splitOptions = {
+            sellerAccessToken,
+            marketplaceFee,
+          };
+
+          this.logger.log(
+            `Using split payment for order ${orderId} - Seller: ${sellerId}, Fee: ${marketplaceFee} ARS`,
+          );
+        } catch (error) {
+          this.logger.error(
+            `Error preparing split payment for order ${orderId}: ${error.message}. Falling back to platform account.`,
+            error.stack,
+          );
+          // Si falla la preparación del split payment, usar la cuenta principal
+          splitOptions = undefined;
+        }
+      } else {
+        this.logger.log(
+          `Seller ${sellerId} does not have MercadoPago account linked. Using platform account for order ${orderId}`,
+        );
+      }
+    }
+
     const { preferenceId, initPoint } =
-      await this.mercadoPagoService.createPreference(order);
+      await this.mercadoPagoService.createPreference(order, splitOptions);
 
     const updatedPayment = await this.prisma.payment.update({
       where: { id: payment.id },

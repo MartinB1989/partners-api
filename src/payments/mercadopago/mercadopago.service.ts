@@ -5,6 +5,11 @@ import { Order, OrderItem, DeliveryType } from '@prisma/client';
 import { MERCADOPAGO_CONFIG } from './mercadopago.constants';
 import * as crypto from 'crypto';
 
+export interface SplitPaymentOptions {
+  sellerAccessToken: string;
+  marketplaceFee: number;
+}
+
 @Injectable()
 export class MercadoPagoService {
   private readonly logger = new Logger(MercadoPagoService.name);
@@ -31,10 +36,30 @@ export class MercadoPagoService {
 
   async createPreference(
     order: Order & { items: OrderItem[] },
+    splitOptions?: SplitPaymentOptions,
   ): Promise<{ preferenceId: string; initPoint: string }> {
     try {
       const frontendUrl = this.configService.get<string>('FRONTEND_URL');
       const backendUrl = this.configService.get<string>('BACKEND_URL');
+
+      // Determinar qué cliente de preferencia usar
+      let preferenceClient: Preference;
+      if (splitOptions) {
+        // Crear cliente dinámico con el token del vendedor
+        const sellerClient = new MercadoPagoConfig({
+          accessToken: splitOptions.sellerAccessToken,
+        });
+        preferenceClient = new Preference(sellerClient);
+        this.logger.log(
+          `Using seller's MercadoPago account for order ${order.orderNumber} with marketplace_fee: ${splitOptions.marketplaceFee}`,
+        );
+      } else {
+        // Usar el cliente principal de la plataforma
+        preferenceClient = this.preference;
+        this.logger.log(
+          `Using platform's MercadoPago account for order ${order.orderNumber}`,
+        );
+      }
 
       // Construir los items desde los OrderItems
       const items = order.items.map((item) => ({
@@ -77,13 +102,15 @@ export class MercadoPagoService {
           order_id: order.id,
           delivery_type: order.deliveryType,
         },
+        // Agregar marketplace_fee solo si es split payment
+        ...(splitOptions && { marketplace_fee: splitOptions.marketplaceFee }),
       };
 
       this.logger.log(
         `Creating preference for order ${order.orderNumber}: ${JSON.stringify(preferenceData)}`,
       );
 
-      const response = await this.preference.create({ body: preferenceData });
+      const response = await preferenceClient.create({ body: preferenceData });
 
       if (!response.id || !response.init_point) {
         throw new Error('Invalid response from Mercado Pago');
